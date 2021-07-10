@@ -85,98 +85,24 @@ It is *installed* by running `pre-commit install` and can be run manually by cal
 - `isort`: Runs ISort.
 - `flake8`: Runs flake8.
 
-## How do I use it?
+## Contributing
 
-### Creating your Team Repository
+### Getting started
 
-One person in the team, preferably the leader, will have to create the repository and add other members as collaborators.
+This project uses [Pipenv](https://pipenv.pypa.io/en/latest/) for package
+management and [pre-commit](https://pre-commit.com) to enforce linting
+requirements. Follow the steps below to get setup using both tools.
 
-1. In the top right corner of your screen, where **Clone** usually is, you have a **Use this template** button to click.
-
-![](https://docs.github.com/assets/images/help/repository/use-this-template-button.png)
-
-2. Give the repository a name and a description.
-
-![](https://docs.github.com/assets/images/help/repository/create-repository-name.png)
-
-3. Click **Create repository from template**.
-
-4. Click **Settings** in your newly created repository.
-
-![](https://docs.github.com/assets/images/help/repository/repo-actions-settings.png)
-
-5. Select **Manage access**.
-
-<!-- Yes, this is inline html. The source image is too vertical to be displayed with 100% width. -->
-<img src="https://docs.github.com/assets/images/help/repository/manage-access-tab.png" style="width: 30%"></img>
-
-6. Click **Invite a collaborator**.
-
-![](https://docs.github.com/assets/images/help/repository/invite-a-collaborator-button.png)
-
-7. Insert the names of each of your teammates, and invite them. Once they have accepted the invitation in their email, they will have write access to the repository.
-
-You are now ready to go! Now sit down, relax, and wait for the kickstart!
-Don't forget to swap "Python Discord" in the `LICENSE` file for the name of each of your team members or the name of your team after the start of the jam.
-
-### Using the Default Pip Setup
-
-Our default setup includes a bare requirement file to be used with a [virtual environment](https://docs.python.org/3/library/venv.html).
-
-We recommend this if you never have used any other dependency manager, although if you have, feel free to switch to it. More on that below.
-
-#### Creating the environment
-Create a virtual environment in the folder `.venv`.
 ```shell
-$ python -m venv .venv
+# Create virtual environment and install dependencies
+$ pipenv install
+
+# Initialize git hooks
+$ pre-commit install
+
+# Activate the virtual environment
+$ pipenv shell
 ```
 
-#### Enter the environment
-It will change based on your operating system and shell.
-```shell
-# Linux, Bash
-$ source .venv/bin/activate
-# Linux, Fish
-$ source .venv/bin/activate.fish
-# Linux, Csh
-$ source .venv/bin/activate.csh
-# Linux, PowerShell Core
-$ .venv/bin/Activate.ps1
-# Windows, cmd.exe
-> .venv\Scripts\activate.bat
-# Windows, PowerShell
-> .venv\Scripts\Activate.ps1
-```
-
-#### Installing the Dependencies
-Once the environment is created and activated, use this command to install the development dependencies.
-```shell
-$ pip install -r dev-requirements.txt
-```
-
-#### Exiting the environment
-Interestingly enough, it is the same for every platform
-```shell
-$ deactivate
-```
-
-Once the environment is activated, all the commands listed previously should work. We highly recommend that you run `pre-commit install` as soon as possible.
-
-## How do I adapt it to my project?
-
-If you wish to use Pipenv or Poetry, you will have to move the dependencies in `dev-requirements.txt` to the development dependencies of your tool.
-
-We've included a porting of `dev-requirements.txt` to both [poetry](./samples/pyproject.toml) and [pipenv](./samples/Pipfile) in the [samples folder](./samples).
-If you use the poetry setup, make sure to change the project name, description, and authors at the top of the file.
-
-When installing new dependencies, don't forget to [pin them](https://pip.pypa.io/en/stable/user_guide/#pinned-version-numbers) by adding a version tag at the end.
-For example, if I wish to install `Click`, a quick look at [PyPI](https://pypi.org/project/click/) tells me that 8.0.1 is the latest version.
-I will then add `click ~= 8.0`, without the last number, to my dependency manager.
-
-A code jam project is left unmaintained after the end of the event. If the dependencies aren't pinned, the project will break after the first major change in an API.
-
-## Final words
-
-Don't forget to replace this README with an actual description of your project! Images are also welcome!
-
-We hope this template will be helpful. Good luck in the jam!
+With the environment activated you can start coding! When you are done you can
+deactivate the environment by simply running `exit`.
