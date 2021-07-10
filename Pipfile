@@ -4,13 +4,13 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+rich = "~=10.5"
 
 [dev-packages]
 # Base tools
 flake8 = "~=3.7"
 isort = "~=5.9"
 pre-commit = "~=2.13.0"
-
 # Flake8 plugins, see https://github.com/python-discord/code-jam-template/tree/main#plugin-list
 flake8-annotations = "~=2.0"
 flake8-bandit = "~=2.1"
