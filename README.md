@@ -1,26 +1,38 @@
-# Python Discord Code Jam Repository Template
-
-## A Primer
-Hello code jam participants! We've put together this repository template for you to use in [our code jams](https://pythondiscord.com/events/) or even other Python events!
-
-This document will contain the following information:
-1. [What does this template contain?](#what-does-this-template-contain)
-2. [How do I use it?](#how-do-i-use-it)
-3. [How do I adapt it to my project?](#how-do-i-adapt-it-to-my-project)
-
-You can also look at [our style guide](https://pythondiscord.com/events/code-jams/code-style-guide/) to get more information about what we consider a maintainable code style.
+# Parquet Visualizer (working title)
 
 ## What does this template contain?
 
 Here is a quick rundown of what each file in this repository contains:
 - `LICENSE`: [The MIT License](https://opensource.org/licenses/MIT), an OSS approved license which grants rights to everyone to use and modify your projects and limits your liability. We highly recommend you to read the license.
 - `.gitignore`: A list of files that will be ignored by Git. Most of them are auto-generated or contain data that you wouldn't want to share publicly.
-- `dev-requirements.txt`: Every PyPI packages used for the project's development, to ensure a common and maintainable code style. [More on that below](#using-the-default-pip-setup).
+- `Pipfile` and `Pipfile.lock`: Used by `Pipenv`. Defines every PyPI package used for the project's development and use.
 - `tox.ini`: The configurations of two of our style tools: [`flake8`](https://pypi.org/project/flake8/) and [`isort`](https://pypi.org/project/isort/).
 - `.pre-commit-config.yaml`: The configuration of the [`pre-commit`](https://pypi.org/project/pre-commit/) tool.
 - `.github/workflows/lint.yaml`: A [GitHub Actions](https://github.com/features/actions) workflow, a set of actions run by GitHub on their server after each push, to ensure the style requirements are met.
 
 Each of these files have comments for you to understand easily, and modify to fit your needs.
+
+## Contributing
+
+### Getting started
+
+This project uses [Pipenv](https://pipenv.pypa.io/en/latest/) for package
+management and [pre-commit](https://pre-commit.com) to enforce linting
+requirements. Follow the steps below to get setup using both tools.
+
+```shell
+# Create virtual environment and install dependencies
+$ pipenv install --dev
+
+# Initialize git hooks
+$ pre-commit install
+
+# Activate the virtual environment
+$ pipenv shell
+```
+
+With the environment activated you can start coding! When you are done you can
+deactivate the environment by simply running `exit`.
 
 ### flake8: general style rules
 
@@ -84,25 +96,3 @@ It is *installed* by running `pre-commit install` and can be run manually by cal
 - `python-check-blanket-noqa`: Forbids you from using noqas on large pieces of code.
 - `isort`: Runs ISort.
 - `flake8`: Runs flake8.
-
-## Contributing
-
-### Getting started
-
-This project uses [Pipenv](https://pipenv.pypa.io/en/latest/) for package
-management and [pre-commit](https://pre-commit.com) to enforce linting
-requirements. Follow the steps below to get setup using both tools.
-
-```shell
-# Create virtual environment and install dependencies
-$ pipenv install --dev
-
-# Initialize git hooks
-$ pre-commit install
-
-# Activate the virtual environment
-$ pipenv shell
-```
-
-With the environment activated you can start coding! When you are done you can
-deactivate the environment by simply running `exit`.
