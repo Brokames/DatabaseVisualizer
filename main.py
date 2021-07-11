@@ -1,13 +1,17 @@
-import click
-from rich.panel import Panel
+from time import sleep
 
-from console import console
+import click
+from rich.live import Live
+
+from tui import layout
 
 
 @click.command()
 def main() -> None:
     """Startup ParquetVisualizer"""
-    console.print(Panel("Hello, Pangolins!"))
+    with Live(layout, screen=True):
+        while True:
+            sleep(1)
 
 
 if __name__ == "__main__":
