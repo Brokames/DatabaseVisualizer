@@ -95,7 +95,7 @@ requirements. Follow the steps below to get setup using both tools.
 
 ```shell
 # Create virtual environment and install dependencies
-$ pipenv install
+$ pipenv install --dev
 
 # Initialize git hooks
 $ pre-commit install
