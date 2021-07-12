@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 rich = "~=10.5"
 click = "~=8.0"
+dask = "*"
 
 [dev-packages]
 # Base tools
