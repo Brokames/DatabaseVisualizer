@@ -14,7 +14,7 @@ header_style = Style(
     bold=True,
 )
 header = Text(
-    "ParquetVisualizer",
+    "Database Viewer",
     justify="center",
     style=header_style,
 )

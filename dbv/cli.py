@@ -3,12 +3,15 @@ from time import sleep
 import click
 from rich.live import Live
 
-from tui import layout
+from dbv.tui import layout
 
 
 @click.command()
 def main() -> None:
-    """Startup ParquetVisualizer"""
+    """Startup Database Viewer
+
+    TODO add more info to this help message
+    """
     with Live(layout, screen=True):
         while True:
             sleep(1)
