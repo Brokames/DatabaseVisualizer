@@ -9,7 +9,7 @@ from dbv.tui import layout
 
 @click.command()
 @click.argument("filename")
-def main(filename) -> None:
+def main(filename: str) -> None:
     """Startup Database Viewer
 
     TODO add more info to this help message
