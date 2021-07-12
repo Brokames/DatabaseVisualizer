@@ -6,7 +6,9 @@ name = "pypi"
 [packages]
 rich = "~=10.5"
 click = "~=8.0"
-dask = "*"
+dask = {version = "~=2021.07", extras = ["dataframe"]}
+numpy = "~=1.21"
+pyarrow = "~=4.0"
 
 [dev-packages]
 # Base tools
