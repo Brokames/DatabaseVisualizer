@@ -1,6 +1,7 @@
 from dask import dataframe as dd
 from rich.table import Table
 
+
 def load_df(filename):
     return dd.read_parquet(filename)
 
