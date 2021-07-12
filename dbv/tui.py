@@ -33,3 +33,12 @@ layout.split(
     Layout(header, name="header", size=1),
     Layout(body, name="main"),
 )
+layout["main"].split_row(
+    Layout(body, name="left", ratio=2),
+    Layout(body, name="output", ratio=3),
+)
+layout["left"].split_column(
+    Layout(body, name="options", ratio=2),
+    Layout(body, name="console", ratio=3),
+    Layout(body, name="input"),
+)
