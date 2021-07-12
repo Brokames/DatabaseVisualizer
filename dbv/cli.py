@@ -3,8 +3,8 @@ from time import sleep
 import click
 from rich.live import Live
 
+from dbv.df import df_to_rich_table, load_df
 from dbv.tui import layout
-from dbv.df import load_df, df_to_rich_table
 
 
 @click.command()
