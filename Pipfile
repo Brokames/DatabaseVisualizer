@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 rich = "~=10.5"
+click = "~=8.0"
 
 [dev-packages]
 # Base tools
@@ -16,6 +17,7 @@ flake8-annotations = "~=2.0"
 flake8-bandit = "~=2.1"
 flake8-docstrings = "~=1.5"
 flake8-isort = "~=4.0"
+build = "~=0.5"
 
 [requires]
 python_version = "3.9"

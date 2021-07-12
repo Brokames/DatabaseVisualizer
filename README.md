@@ -1,24 +1,19 @@
-# Parquet Visualizer (working title)
+# Database Viewer (working title)
 
-## What does this template contain?
+## Getting Started
 
-Here is a quick rundown of what each file in this repository contains:
-- `LICENSE`: [The MIT License](https://opensource.org/licenses/MIT), an OSS approved license which grants rights to everyone to use and modify your projects and limits your liability. We highly recommend you to read the license.
-- `.gitignore`: A list of files that will be ignored by Git. Most of them are auto-generated or contain data that you wouldn't want to share publicly.
-- `Pipfile` and `Pipfile.lock`: Used by `Pipenv`. Defines every PyPI package used for the project's development and use.
-- `tox.ini`: The configurations of two of our style tools: [`flake8`](https://pypi.org/project/flake8/) and [`isort`](https://pypi.org/project/isort/).
-- `.pre-commit-config.yaml`: The configuration of the [`pre-commit`](https://pypi.org/project/pre-commit/) tool.
-- `.github/workflows/lint.yaml`: A [GitHub Actions](https://github.com/features/actions) workflow, a set of actions run by GitHub on their server after each push, to ensure the style requirements are met.
-
-Each of these files have comments for you to understand easily, and modify to fit your needs.
+TODO Need a better explanation here.
+```shell
+pip install https://github.com/Brokames/ParquetVisualizer.git
+```
 
 ## Contributing
-
-### Getting started
 
 This project uses [Pipenv](https://pipenv.pypa.io/en/latest/) for package
 management and [pre-commit](https://pre-commit.com) to enforce linting
 requirements. Follow the steps below to get setup using both tools.
+
+### Environment Setup
 
 ```shell
 # Create virtual environment and install dependencies
@@ -33,6 +28,21 @@ $ pipenv shell
 
 With the environment activated you can start coding! When you are done you can
 deactivate the environment by simply running `exit`.
+
+### Development Installation
+
+With the virtual environment active, use the following command to run `dbv`.
+Note: your current directory must be the project root.
+
+```shell
+$ python -m dbv.cli
+```
+
+Alternatively, you can install it in the virtual environement with:
+
+```shell
+$ pip install .
+```
 
 ### flake8: general style rules
 
