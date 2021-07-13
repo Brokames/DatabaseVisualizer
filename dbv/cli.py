@@ -1,7 +1,7 @@
 import asyncio
 import sys
 import tty
-from typing import Callable
+from typing import Awaitable, Callable
 
 import click
 from rich.live import Live
@@ -10,10 +10,13 @@ from dbv.df import df_to_rich_table, load_df
 from dbv.tui import layout
 
 
-async def consume_keyboard_events(keyboard_handler: Callable[[str], Awaitable[bool]]) -> None:
-    """Read from stdin and execute the keyboard handler. The buffer is consumed
-    serially with no regard to timing, so if `keyboard_handler` is slow it may delay
-    the execution of events and feel unnaturaly.
+async def consume_keyboard_events(
+    keyboard_handler: Callable[[str], Awaitable[bool]]
+) -> None:
+    """Read from stdin and execute the keyboard handler.
+
+    The buffer is consumed serially with no regard to timing, so if `keyboard_handler`
+    is slow it may delay the execution of events and feel unnaturaly.
 
     When `keyboard_handler` returns falsey, exit.
     """
@@ -25,6 +28,7 @@ async def consume_keyboard_events(keyboard_handler: Callable[[str], Awaitable[bo
 
 class Interface:
     """Class maintaining state for the interface.
+
     This class coordinates the keyboard handler with anything else stateful that it
     should interact with. Trivially so far this is nothing; the next immediate step
     is for this class to own the layout object and mutate it based on user input.
