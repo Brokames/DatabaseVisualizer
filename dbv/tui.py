@@ -1,12 +1,15 @@
 import enum
 from typing import Callable
 
-import rich
 from rich.color import Color, parse_rgb_hex
 from rich.layout import Layout
+from rich.padding import Padding
 from rich.panel import Panel
 from rich.style import Style
+from rich.styled import Styled
 from rich.text import Text
+
+from dbv.df import df_schema, df_to_rich_table
 
 bg_color = Color.from_triplet(parse_rgb_hex("1D1F21"))
 fg_color = Color.from_triplet(parse_rgb_hex("C5C8C6"))
@@ -53,31 +56,35 @@ def mode_line(current_mode: Mode) -> Layout:
     return line
 
 
+class Summary:
+    """Rich-renderable summary pane for a DataFrame."""
+
+    def __init__(self, df):
+        self.df = df
+
+    def __rich__(self):
+        return df_schema(self.df)
+
+
 class Interface:
     """Class maintaining state for the interface.
 
     This class coordinates the keyboard handler with anything else stateful that it
-    should interact with. Trivially so far this is nothing; the next immediate step
-    is for this class to own the layout object and mutate it based on user input.
+    should interact with. It has a __rich__ method which controls how the entire
+    interface is rendered.
+
+    We need Interface to know about the df so it _can_ rerender the table if it wants,
+    for instance to filter to specific rows or columns; however we also don't want
+    Interface to become a big blob where we throw all of the code. Ideally Interface
+    should be a "controller" and should dole out responsibility of rendering to others.
     """
 
-    def __init__(self):
-        self.table = None
+    def __init__(self, df, title):
+        self.df = df
+        self.summary = Summary(self.df)
+        # store table so it isn't re-computed each refresh
+        self._table = df_to_rich_table(df, title=title)
         self.mode = Mode.TABLE
-
-    def set_table(self, table: rich.table.Table) -> None:
-        """Record the rendered table for the interface.
-
-        For now setting as a table directly because we don't want to recompute
-        the rich.table.Table on each refresh. However, we need a better separation
-        of concerns here. We want Interface to know about the df so it _can_
-        rerender the table if it wants, for instance to filter to specific rows
-        or columns; however we also don't want Interface to become a big blob
-        where we throw all of the code. Ideally Interface should be a "controller"
-        and should dole out responsibility of rendering to others.
-        """
-        self.table = table
-        self.table.style = body_style
 
     async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
         """This function is executed serially per input typed by the keyboard.
@@ -103,10 +110,12 @@ class Interface:
             mode_line(self.mode),
             Layout(body, name="main"),
         )
-        output = self.table if self.mode == Mode.TABLE else Text("SUMMARY HOORAY")
+        output = self._table if self.mode == Mode.TABLE else self.summary
+        padded_output = Styled(Padding(output, (1, 2)), body_style)
 
         layout["main"].split_row(
-            Layout(body, name="left", ratio=2), Layout(output, name="output", ratio=3),
+            Layout(body, name="left", ratio=2),
+            Layout(padded_output, name="output", ratio=3),
         )
         layout["left"].split_column(
             Layout(body, name="options", ratio=2),

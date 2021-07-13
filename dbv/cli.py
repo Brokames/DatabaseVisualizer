@@ -6,7 +6,7 @@ from typing import Awaitable, Callable
 import click
 from rich.live import Live
 
-from dbv.df import df_to_rich_table, load_df
+from dbv.df import load_df
 from dbv.tui import Interface
 
 RefreshCallback = Callable[[], None]
@@ -40,12 +40,10 @@ def main(filename: str) -> None:
     # and can be read immediately without input buffering.
     tty.setcbreak(sys.stdin.fileno())
 
-    interface = Interface()
+    df = load_df(filename)
+    interface = Interface(df, filename)
 
     with Live(interface, screen=True) as live:
-        df = load_df(filename)
-        interface.set_table(df_to_rich_table(df, title=filename))
-
         loop = asyncio.get_event_loop()
         loop.run_until_complete(
             consume_keyboard_events(interface.keyboard_handler, live)
