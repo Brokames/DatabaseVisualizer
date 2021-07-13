@@ -20,11 +20,18 @@ body = Panel("Hello Pangolins!", style=body_style,)
 
 
 class Mode(enum.Enum):
+    """Mode enum for the interface.
+
+    Modes specified here are shown as options in the modeline; add more modes by
+        1. add an element here
+        2. add a keyboard shortcut to switch to the mode in keyboard_handler
+        3. update __rich__ to change rendering based on the mode.
+    """
     SUMMARY = "(s)ummary"
     TABLE = "(t)able"
 
 
-def mode_line(current_mode) -> Layout:
+def mode_line(current_mode: Mode) -> Layout:
     """Render the UI mode line."""
     line = Layout(name="mode_line", size=1)
 
