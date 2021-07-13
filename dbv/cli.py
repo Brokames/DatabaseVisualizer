@@ -9,7 +9,6 @@ from rich.live import Live
 from dbv.df import df_to_rich_table, load_df
 from dbv.tui import Interface
 
-
 RefreshCallback = Callable[[], None]
 KeyboardHandler = Callable[[str, RefreshCallback], Awaitable[bool]]
 
