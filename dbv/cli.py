@@ -1,6 +1,5 @@
 import asyncio
 import sys
-from time import sleep
 import tty
 from typing import Optional
 
