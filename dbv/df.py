@@ -48,6 +48,6 @@ class Schema:
         yield table
 
     @classmethod
-    def from_df(df: dd.DataFrame) -> "Schema":
+    def from_df(cls, df: dd.DataFrame) -> "Schema":
         """Construct a table schema from a dataframe."""
-        return Schema({col: getattr(df, col).dtype for col in df.columns})
+        return cls({col: getattr(df, col).dtype for col in df.columns})
