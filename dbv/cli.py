@@ -33,7 +33,7 @@ class Interface:
         """This function is executed serially per input typed by the keyboard.
         It does not need to be thread safe; the keyboard event generator will not
         call it in parallel. `ch` will always have length 1."""
-        if ch == 'q':
+        if ch == "q":
             return False
         return True
 
