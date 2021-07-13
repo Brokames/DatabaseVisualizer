@@ -1,7 +1,7 @@
 import asyncio
 import sys
 import tty
-from typing import Optional
+from typing import Callable
 
 import click
 from rich.live import Live
@@ -10,7 +10,7 @@ from dbv.df import df_to_rich_table, load_df
 from dbv.tui import layout
 
 
-async def consume_keyboard_events(keyboard_handler) -> None:
+async def consume_keyboard_events(keyboard_handler: Callable[[str], Awaitable[bool]]) -> None:
     """Read from stdin and execute the keyboard handler. The buffer is consumed
     serially with no regard to timing, so if `keyboard_handler` is slow it may delay
     the execution of events and feel unnaturaly.
@@ -24,15 +24,18 @@ async def consume_keyboard_events(keyboard_handler) -> None:
 
 
 class Interface:
-    """Class maintaining state for the interface. This class coordinates the keyboard
-    handler with anything else stateful that it should interact with. Trivially so far
-    this is nothing; the next immediate step is for this class to own the layout object
-    and mutate it based on user input."""
+    """Class maintaining state for the interface.
+    This class coordinates the keyboard handler with anything else stateful that it
+    should interact with. Trivially so far this is nothing; the next immediate step
+    is for this class to own the layout object and mutate it based on user input.
+    """
 
     async def keyboard_handler(self, ch: str) -> bool:
         """This function is executed serially per input typed by the keyboard.
+
         It does not need to be thread safe; the keyboard event generator will not
-        call it in parallel. `ch` will always have length 1."""
+        call it in parallel. `ch` will always have length 1.
+        """
         if ch == "q":
             return False
         return True
@@ -45,7 +48,6 @@ def main(filename: str) -> None:
 
     TODO add more info to this help message
     """
-
     # Puts the terminal into cbreak mode, meaning keys aren't echoed to the screen
     # and can be read immediately without input buffering.
     tty.setcbreak(sys.stdin.fileno())
