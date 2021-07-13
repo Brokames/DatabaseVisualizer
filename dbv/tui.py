@@ -27,6 +27,7 @@ class Mode(enum.Enum):
         2. add a keyboard shortcut to switch to the mode in keyboard_handler
         3. update __rich__ to change rendering based on the mode.
     """
+
     SUMMARY = "(s)ummary"
     TABLE = "(t)able"
 
