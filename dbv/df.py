@@ -47,7 +47,7 @@ class Schema:
             table.add_row(column, str(dtype))
         yield table
 
-
-def df_schema(df: dd.DataFrame) -> Schema:
-    """Construct a table schema from a dataframe."""
-    return Schema({col: getattr(df, col).dtype for col in df.columns})
+    @classmethod
+    def from_df(df: dd.DataFrame) -> "Schema":
+        """Construct a table schema from a dataframe."""
+        return Schema({col: getattr(df, col).dtype for col in df.columns})

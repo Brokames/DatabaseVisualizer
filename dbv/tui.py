@@ -11,7 +11,7 @@ from rich.style import Style
 from rich.styled import Styled
 from rich.text import Text
 
-from dbv.df import df_schema, df_to_rich_table
+from dbv.df import Schema, df_to_rich_table
 
 bg_color = Color.from_triplet(parse_rgb_hex("1D1F21"))
 fg_color = Color.from_triplet(parse_rgb_hex("C5C8C6"))
@@ -65,7 +65,7 @@ class Summary:
         self.df = df
 
     def __rich__(self) -> ConsoleRenderable:
-        return df_schema(self.df)
+        return Schema.from_df(self.df)
 
 
 class Interface:
