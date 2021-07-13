@@ -1,7 +1,9 @@
 import enum
 from typing import Callable
 
+from dask import dataframe as dd
 from rich.color import Color, parse_rgb_hex
+from rich.console import ConsoleRenderable
 from rich.layout import Layout
 from rich.padding import Padding
 from rich.panel import Panel
@@ -59,10 +61,10 @@ def mode_line(current_mode: Mode) -> Layout:
 class Summary:
     """Rich-renderable summary pane for a DataFrame."""
 
-    def __init__(self, df):
+    def __init__(self, df: dd.DataFrame):
         self.df = df
 
-    def __rich__(self):
+    def __rich__(self) -> ConsoleRenderable:
         return df_schema(self.df)
 
 
@@ -79,7 +81,7 @@ class Interface:
     should be a "controller" and should dole out responsibility of rendering to others.
     """
 
-    def __init__(self, df, title):
+    def __init__(self, df: dd.DataFrame, title: str):
         self.df = df
         self.summary = Summary(self.df)
         # store table so it isn't re-computed each refresh
@@ -102,7 +104,7 @@ class Interface:
             refresh()
         return True
 
-    def __rich__(self) -> Layout:
+    def __rich__(self) -> ConsoleRenderable:
         """Render the interface layout."""
         layout = Layout()
         layout.split(
