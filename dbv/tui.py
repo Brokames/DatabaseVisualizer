@@ -1,5 +1,7 @@
 import enum
+from typing import Callable
 
+import rich
 from rich.color import Color, parse_rgb_hex
 from rich.layout import Layout
 from rich.panel import Panel
@@ -17,32 +19,13 @@ body_style = Style(color=fg_color, bgcolor=bg_color,)
 body = Panel("Hello Pangolins!", style=body_style,)
 
 
-def base_layout() -> Layout:
-    """Create a terminal layout split with a few different body elements."""
-    layout = Layout()
-    layout.split(
-        Layout(header, name="header", size=1),
-        Layout(name="mode_line", size=1),
-        Layout(body, name="main"),
-    )
-    layout["main"].split_row(
-        Layout(body, name="left", ratio=2),
-        Layout(body, name="output", ratio=3),
-    )
-    layout["left"].split_column(
-        Layout(body, name="options", ratio=2),
-        Layout(body, name="console", ratio=3),
-        Layout(body, name="input"),
-    )
-    return layout
-
-
 class Mode(enum.Enum):
     SUMMARY = "(s)ummary"
     TABLE = "(t)able"
 
 
-def mode_line(current_mode):
+def mode_line(current_mode) -> Layout:
+    """Render the UI mode line."""
     line = Layout(name="mode_line", size=1)
 
     inactive_style = "green on blue"
@@ -71,15 +54,24 @@ class Interface:
     """
 
     def __init__(self):
-        layout = base_layout()
-        self.mode_line = layout["mode_line"]
-        self.set_mode(Mode.TABLE)
+        self.table = None
+        self.mode = Mode.TABLE
 
-    def set_mode(self, mode):
-        self.mode = mode
-        self.mode_line.update(mode_line(mode))
+    def set_table(self, table: rich.table.Table) -> None:
+        """Record the rendered table for the interface.
 
-    async def keyboard_handler(self, ch: str) -> bool:
+        For now setting as a table directly because we don't want to recompute
+        the rich.table.Table on each refresh. However, we need a better separation
+        of concerns here. We want Interface to know about the df so it _can_
+        rerender the table if it wants, for instance to filter to specific rows
+        or columns; however we also don't want Interface to become a big blob
+        where we throw all of the code. Ideally Interface should be a "controller"
+        and should dole out responsibility of rendering to others.
+        """
+        self.table = table
+        self.table.style = body_style
+
+    async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
         """This function is executed serially per input typed by the keyboard.
 
         It does not need to be thread safe; the keyboard event generator will not
@@ -88,10 +80,29 @@ class Interface:
         if ch == "q":
             return False
         elif ch == "s":
-            self.set_mode(Mode.SUMMARY)
+            self.mode = Mode.SUMMARY
+            refresh()
         elif ch == "t":
-            self.set_mode(Mode.TABLE)
+            self.mode = Mode.TABLE
+            refresh()
         return True
 
-    def __rich__(self):
-        return self.layout
+    def __rich__(self) -> Layout:
+        """Render the interface layout."""
+        layout = Layout()
+        layout.split(
+            Layout(header, name="header", size=1),
+            mode_line(self.mode),
+            Layout(body, name="main"),
+        )
+        output = self.table if self.mode == Mode.TABLE else Text("SUMMARY HOORAY")
+
+        layout["main"].split_row(
+            Layout(body, name="left", ratio=2), Layout(output, name="output", ratio=3),
+        )
+        layout["left"].split_column(
+            Layout(body, name="options", ratio=2),
+            Layout(body, name="console", ratio=3),
+            Layout(body, name="input"),
+        )
+        return layout
