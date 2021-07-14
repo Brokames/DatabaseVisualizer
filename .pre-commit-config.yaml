@@ -32,3 +32,8 @@ repos:
           - flake8-bandit~=2.1
           - flake8-docstrings~=1.5
           - flake8-isort~=4.0
+
+  - repo: https://github.com/psf/black
+    rev: 21.6b0
+    hooks:
+      - id: black
