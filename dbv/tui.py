@@ -67,7 +67,9 @@ def mode_line(current_mode: Mode) -> Layout:
 
 
 class Help:
-    """Rich-renderable command help page"""
+    """Show this help page"""
+
+    # Rich-renderable command help page
 
     def __rich__(self) -> ConsoleRenderable:
         table = Table(title="Command Help")
@@ -80,7 +82,9 @@ class Help:
 
 
 class Summary:
-    """Rich-renderable summary pane for a DataFrame."""
+    """Show a summary of the database"""
+
+    # Rich-renderable summary pane for a DataFrame.
 
     def __init__(self, df: dd.DataFrame):
         self.df = df
@@ -90,7 +94,9 @@ class Summary:
 
 
 class TableView:
-    """Rich-renderable summary pane for a DataFrame."""
+    """Show the database as a table"""
+
+    # Rich-renderable summary pane for a DataFrame.
 
     def __init__(self, df: dd.DataFrame):
         self.df = df
