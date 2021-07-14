@@ -106,10 +106,12 @@ class TableView:
         """Setter for column_startat."""
         self._column_startat = min(len(self.df.columns) - 1, max(0, column_startat))
 
-    def increment_page(self):
+    def increment_page(self) -> None:
+        """Increment startat by the last known page size."""
         self.startat += self._last_page_size
 
-    def decrement_page(self):
+    def decrement_page(self) -> None:
+        """Decrement startat by the last known page size."""
         self.startat -= self._last_page_size
 
     def __rich_console__(
@@ -128,7 +130,7 @@ class TableView:
             # apply filter
             .pipe(lambda df: df if not self.filter else df[self.filter])
             # start at self.column_startat
-            .pipe(lambda df: df.iloc[:, self.column_startat :])
+            .pipe(lambda df: df.iloc[:, self.column_startat :])  # noqa: E203
         )
         paged = list(
             itertools.islice(filtered.itertuples(), self.startat, self.startat + height)
