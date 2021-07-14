@@ -9,6 +9,7 @@ click = "~=8.0"
 dask = {version = "~=2021.07", extras = ["dataframe"]}
 numpy = "~=1.21"
 pyarrow = "~=4.0"
+black = "*"
 
 [dev-packages]
 # Base tools
@@ -21,6 +22,11 @@ flake8-bandit = "~=2.1"
 flake8-docstrings = "~=1.5"
 flake8-isort = "~=4.0"
 build = "~=0.5"
+faker = "*"
+black = "*"
 
 [requires]
 python_version = "3.9"
+
+[pipenv]
+allow_prereleases = true
