@@ -93,7 +93,7 @@ class TableView:
 
         filtered = self.df.pipe(lambda df: df if not self.filter else df[self.filter])
         paged = itertools.islice(
-            filtered.iterrows(), self.startat, self.startat + height
+            filtered.itertuples(), self.startat, self.startat + height
         )
 
         table = Table(expand=True, row_styles=[body_style, body_style_secondary])
@@ -104,8 +104,8 @@ class TableView:
         def format(v: any) -> ConsoleRenderable:
             return Text(v) if isinstance(v, str) else Pretty(v)
 
-        for i, row in paged:
-            table.add_row(*map(format, [i, *row]))
+        for row in paged:
+            table.add_row(*map(format, row))
 
         yield table
         yield f"... {len(filtered)} total rows"
