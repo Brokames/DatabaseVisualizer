@@ -37,6 +37,7 @@ class Mode(enum.Enum):
         1. add an element here
         2. add a keyboard shortcut to switch to the mode in keyboard_handler
         3. update __rich__ to change rendering based on the mode.
+        4. Add a row to Help.__rich__ for the help string
     """
 
     SUMMARY = "(s)ummary"
@@ -65,15 +66,16 @@ def mode_line(current_mode: Mode) -> Layout:
     return line
 
 
-class CommandHelp:
+class Help:
     """Rich-renderable command help page"""
 
     def __rich__(self) -> ConsoleRenderable:
         table = Table(title="Command Help")
         table.add_column("Command")
         table.add_column("Description")
-        for mode in Mode:
-            table.add_row(mode.value, mode.name)
+        table.add_row(Mode.SUMMARY.value, Summary.__doc__)
+        table.add_row(Mode.TABLE.value, TableView.__doc__)
+        table.add_row(Mode.HELP.value, Help.__doc__)
         return table
 
 
@@ -204,7 +206,7 @@ class Interface:
         self.summary = Summary(self.df)
         self.table = TableView(self.df)
         self.mode = Mode.TABLE
-        self.help = CommandHelp()
+        self.help = Help()
 
     async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
         """This function is executed serially per input typed by the keyboard.
