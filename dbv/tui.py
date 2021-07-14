@@ -41,6 +41,7 @@ class Mode(enum.Enum):
 
     SUMMARY = "(s)ummary"
     TABLE = "(t)able"
+    HELP = "(?)help"
 
 
 def mode_line(current_mode: Mode) -> Layout:
@@ -62,6 +63,18 @@ def mode_line(current_mode: Mode) -> Layout:
     )
 
     return line
+
+
+class CommandHelp:
+    """Rich-renderable command help page"""
+
+    def __rich__(self) -> ConsoleRenderable:
+        table = Table(title="Command Help")
+        table.add_column("Command")
+        table.add_column("Description")
+        for mode in Mode:
+            table.add_row(mode.name, mode.value)
+        return table
 
 
 class Summary:
@@ -191,6 +204,7 @@ class Interface:
         self.summary = Summary(self.df)
         self.table = TableView(self.df)
         self.mode = Mode.TABLE
+        self.help = CommandHelp()
 
     async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
         """This function is executed serially per input typed by the keyboard.
@@ -224,6 +238,10 @@ class Interface:
             self.table.column_startat -= 1
             refresh()
 
+        elif ch == "?":
+            self.mode = Mode.HELP
+            refresh()
+
         return True
 
     def __rich__(self) -> ConsoleRenderable:
@@ -234,7 +252,10 @@ class Interface:
             mode_line(self.mode),
             Layout(body, name="main"),
         )
-        output = self.table if self.mode == Mode.TABLE else self.summary
+        if self.mode == Mode.HELP:
+            output = self.help
+        else:
+            output = self.table if self.mode == Mode.TABLE else self.summary
         padded_output = Styled(Padding(output, (1, 2)), body_style)
 
         layout["main"].split_row(
