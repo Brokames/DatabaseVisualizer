@@ -50,7 +50,9 @@ def main(filename: str) -> None:
 
         with Live(interface, screen=True) as live:
             loop = asyncio.get_event_loop()
-            loop.run_until_complete(consume_keyboard_events(interface.keyboard_handler, live))
+            loop.run_until_complete(
+                consume_keyboard_events(interface.keyboard_handler, live)
+            )
 
     finally:  # restores the terminal to default behavior
         tty.tcsetattr(stdin, tty.TCSANOW, tattr)
