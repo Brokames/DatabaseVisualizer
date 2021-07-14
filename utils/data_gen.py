@@ -1,7 +1,7 @@
+import datetime
 import enum
 import random
 from collections import namedtuple
-from datetime import datetime
 from itertools import islice, starmap
 from typing import Any, Dict, Generator, Iterator, List
 
@@ -137,7 +137,7 @@ class DataGenerator:
         while True:
             yield self.faker.phone_number()
 
-    def _birth_date_generator(self) -> datetime:
+    def _birth_date_generator(self) -> datetime.date:
         """Infinite iterator to produce date of births"""
         while True:
             yield self.faker.date_of_birth(minimum_age=18, maximum_age=77)
