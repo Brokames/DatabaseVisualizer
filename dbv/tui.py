@@ -161,9 +161,9 @@ class TableView:
 
         # cant_render[0], if it exists, is the first column indexd we don't have space for
         if cant_render.size:  # np.ndarray
-            num_columns = cant_render[0]
-            column_names = column_names[:num_columns]
-            paged = [row[:num_columns] for row in paged]
+            max_column = max(cant_render[0], self.column_startat + 1)
+            column_names = column_names[:max_column]
+            paged = [row[:max_column] for row in paged]
 
         for column_name in column_names:
             table.add_column(column_name)
