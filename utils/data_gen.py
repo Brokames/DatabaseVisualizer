@@ -152,7 +152,7 @@ class DataGenerator:
         """Returns named a namedtuple of header & a list of data"""
         Table = namedtuple("Table", self.headers)
         # fmt: off
-        return Table(*(islice(data_generator, num_rows) for data_generator in self.data_generators))
+        return Table(*(tuple(islice(data_generator, num_rows)) for data_generator in self.data_generators))
         # fmt: on
 
     def gen_pandas_df(self, num_rows: int = None) -> pd.DataFrame:
