@@ -7,11 +7,14 @@ import click
 from rich.live import Live
 
 from dbv.df import df_to_rich_table, load_df
-from dbv.tui import layout
+from dbv.tui import Interface
+
+RefreshCallback = Callable[[], None]
+KeyboardHandler = Callable[[str, RefreshCallback], Awaitable[bool]]
 
 
 async def consume_keyboard_events(
-    keyboard_handler: Callable[[str], Awaitable[bool]]
+    keyboard_handler: KeyboardHandler, live: Live
 ) -> None:
     """Read from stdin and execute the keyboard handler.
 
@@ -21,28 +24,9 @@ async def consume_keyboard_events(
     When `keyboard_handler` returns falsey, exit.
     """
     while ch := sys.stdin.read(1):
-        should_continue = await keyboard_handler(ch)
+        should_continue = await keyboard_handler(ch, live.refresh)
         if not should_continue:
             break
-
-
-class Interface:
-    """Class maintaining state for the interface.
-
-    This class coordinates the keyboard handler with anything else stateful that it
-    should interact with. Trivially so far this is nothing; the next immediate step
-    is for this class to own the layout object and mutate it based on user input.
-    """
-
-    async def keyboard_handler(self, ch: str) -> bool:
-        """This function is executed serially per input typed by the keyboard.
-
-        It does not need to be thread safe; the keyboard event generator will not
-        call it in parallel. `ch` will always have length 1.
-        """
-        if ch == "q":
-            return False
-        return True
 
 
 @click.command()
@@ -58,12 +42,14 @@ def main(filename: str) -> None:
 
     interface = Interface()
 
-    with Live(layout, screen=True):
+    with Live(interface, screen=True) as live:
         df = load_df(filename)
-        layout["main"].update(df_to_rich_table(df, title=filename))
+        interface.set_table(df_to_rich_table(df, title=filename))
 
         loop = asyncio.get_event_loop()
-        loop.run_until_complete(consume_keyboard_events(interface.keyboard_handler))
+        loop.run_until_complete(
+            consume_keyboard_events(interface.keyboard_handler, live)
+        )
 
 
 if __name__ == "__main__":
