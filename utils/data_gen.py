@@ -1,6 +1,7 @@
 import enum
 import random
 from collections import namedtuple
+from datetime import datetime
 from itertools import islice, starmap
 from typing import Any, Dict, Generator, Iterator, List
 
@@ -9,6 +10,22 @@ from faker import Faker
 
 
 class Columns(enum.Enum):
+    """Available columns for data generator
+
+    NAME[str]: First + Last + optional prefix/sufix
+    ADDRESS[dict]: {
+        "address": str,
+        "state": str,
+        "city": str,
+        "zipcode": int, # not actually smart, but good for testing types
+    }
+    PHONE_NUMBER[str]
+    DATE_OF_BIRTH[datetime]: ages between 18 and 77
+    JOB[str]
+    BANK_ACCOUNT[str]
+    SSN[str]
+    """
+
     NAME = 1
     ADDRESS = 2
     PHONE_NUMBER = 3
@@ -47,7 +64,6 @@ class DataGenerator:
         columns: List[Columns] = DEFAULT_COLUMNS,
         seed: int = 0,
     ) -> None:
-
         self.columns = columns
         self.headers = self._get_headers()
         self.data_generators = self._get_data_generators()
@@ -69,7 +85,6 @@ class DataGenerator:
 
     def _get_data_generators(self) -> List[Generator[Any, None, None]]:
         """Returns a list of the custom data generators for the columns"""
-
         generator_dict = {
             Columns.NAME: self._name_generator(),
             Columns.ADDRESS: self._address_generator(),
@@ -92,6 +107,7 @@ class DataGenerator:
 
     def _address_generator(self) -> Dict:
         """Infinite iterator of dictionaries of addresses
+
         {
             "address": str,
             "state": str,
@@ -121,7 +137,7 @@ class DataGenerator:
         while True:
             yield self.faker.phone_number()
 
-    def _birth_date_generator(self) -> str:
+    def _birth_date_generator(self) -> datetime:
         """Infinite iterator to produce date of births"""
         while True:
             yield self.faker.date_of_birth(minimum_age=18, maximum_age=77)
