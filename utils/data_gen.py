@@ -1,16 +1,13 @@
 import enum
 import random
 
+import pandas as pd
+
 from collections import namedtuple
 from itertools import islice, starmap
 from typing import Any, Dict, Generator, Iterator, List
 
 from faker import Faker
-
-
-class TableFormat(enum.Enum):
-    COLUMN = 1
-    ROW = 2
 
 
 class Columns(enum.Enum):
@@ -34,7 +31,6 @@ DEFAULT_COLUMNS = [
 ]
 
 
-
 class DataGenerator:
     """Generates tables of data in either row or column format.
 
@@ -50,19 +46,17 @@ class DataGenerator:
 
     def __init__(
         self,
-        table_format: TableFormat = TableFormat.ROW,
         columns: List[Columns] = DEFAULT_COLUMNS,
         seed: int = 0,
     ) -> None:
 
-        self.table_format = table_format
         self.columns = columns
         self.headers = self._get_headers()
         self.data_generators = self._get_data_generators()
         self.faker = Faker(seed=seed)
 
     def _get_headers(self) -> List[str]:
-        """ Retuns a list of headers for the columns """
+        """Retuns a list of headers for the columns"""
         header_dict = {
             Columns.NAME: "Name",
             Columns.ADDRESS: "Address",
@@ -70,13 +64,13 @@ class DataGenerator:
             Columns.DATE_OF_BIRTH: "Date_of_Birth",
             Columns.JOB: "Job",
             Columns.BANK_ACCOUNT: "Bank_Account",
-            Columns.SSN: "SSN"
+            Columns.SSN: "SSN",
         }
 
         return [header_dict[col] for col in self.columns]
-    
+
     def _get_data_generators(self) -> List[Generator[Any, None, None]]:
-        """ Returns a list of the custom data generators for the columns """
+        """Returns a list of the custom data generators for the columns"""
 
         generator_dict = {
             Columns.NAME: self._name_generator(),
@@ -85,11 +79,10 @@ class DataGenerator:
             Columns.DATE_OF_BIRTH: self._birth_date_generator(),
             Columns.JOB: self._job_generator(),
             Columns.BANK_ACCOUNT: self._bank_account_generator(),
-            Columns.SSN: self._ssn_generator()
+            Columns.SSN: self._ssn_generator(),
         }
 
         return [generator_dict[col] for col in self.columns]
-       
 
     def _name_generator(self) -> str:
         """Infinite iterator to produce full names"""
@@ -151,12 +144,17 @@ class DataGenerator:
             yield self.faker.ssn()
 
     def gen_rows(self, num_rows: int = None) -> Iterator[namedtuple]:
-        """ Returns an iterator of size `num_rows` of namedtuples in a row format """
+        """Returns an iterator of size `num_rows` of namedtuples in a row format"""
         Row = namedtuple("Row", self.headers)
         return starmap(Row, islice(zip(*self.data_generators), num_rows))
-        
 
     def gen_table(self, num_rows: int = None) -> namedtuple:
-        """ Returns named a namedtuple of header & a list of data """
+        """Returns named a namedtuple of header & a list of data"""
         Table = namedtuple("Table", self.headers)
+        # fmt: off
         return Table(*(islice(data_generator, num_rows) for data_generator in self.data_generators))
+        # fmt: on
+
+    def gen_pandas_df(self, num_rows: int = None) -> pd.DataFrame:
+        """Returns the data as a pandas dataframe"""
+        return pd.DataFrame(self.gen_rows(num_rows))
