@@ -1,12 +1,10 @@
 import enum
 import random
-
-import pandas as pd
-
 from collections import namedtuple
 from itertools import islice, starmap
 from typing import Any, Dict, Generator, Iterator, List
 
+import pandas as pd
 from faker import Faker
 
 
