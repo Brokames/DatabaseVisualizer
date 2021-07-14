@@ -73,7 +73,7 @@ class CommandHelp:
         table.add_column("Command")
         table.add_column("Description")
         for mode in Mode:
-            table.add_row(mode.name, mode.value)
+            table.add_row(mode.value, mode.name)
         return table
 
 
