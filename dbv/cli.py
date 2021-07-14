@@ -36,18 +36,24 @@ def main(filename: str) -> None:
 
     TODO add more info to this help message
     """
-    # Puts the terminal into cbreak mode, meaning keys aren't echoed to the screen
-    # and can be read immediately without input buffering.
-    tty.setcbreak(sys.stdin.fileno())
+    # stores terminal attributes to restore after closing the application
+    stdin = sys.stdin.fileno()
+    tattr = tty.tcgetattr(stdin)
 
-    df = load_df(filename)
-    interface = Interface(df, filename)
+    try:
+        # Puts the terminal into cbreak mode, meaning keys aren't echoed to the screen
+        # and can be read immediately without input buffering.
+        tty.setcbreak(sys.stdin.fileno())
 
-    with Live(interface, screen=True) as live:
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(
-            consume_keyboard_events(interface.keyboard_handler, live)
-        )
+        df = load_df(filename)
+        interface = Interface(df, filename)
+
+        with Live(interface, screen=True) as live:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(consume_keyboard_events(interface.keyboard_handler, live))
+
+    finally:  # restores the terminal to default behavior
+        tty.tcsetattr(stdin, tty.TCSANOW, tattr)
 
 
 if __name__ == "__main__":
