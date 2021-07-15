@@ -350,6 +350,20 @@ class Interface:
         refresh()
         return True
 
+    @add_command(table_commands, "g", "Go to top")
+    def go_to_top(self, refresh: Callable) -> bool:
+        """Go to the top of the table"""
+        self.table.startat = 0
+        refresh()
+        return True
+
+    @add_command(table_commands, "G", "Go to bottom")
+    def go_to_bottom(self, refresh: Callable) -> bool:
+        """Go to the bottom of the table"""
+        self.table.startat = len(self.df)
+        refresh()
+        return True
+
     # quit (TODO: if input is lagged, doesn't work)
     @add_command(commands, "q", "(q)uit")
     def quit(self, refresh: Callable) -> bool:
