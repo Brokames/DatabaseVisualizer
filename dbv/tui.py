@@ -70,7 +70,11 @@ class Help:
     """Rich-renderable command help page"""
 
     def __init__(self, command_dict: dict):
-        table = Table(title="Command Help")
+        table = Table(
+            title="Command Help",
+            expand=True,
+            row_styles=[body_style, body_style_secondary],
+        )
         table.add_column("Command")
         table.add_column("Short")
         table.add_column("Description")
@@ -283,51 +287,6 @@ class Interface:
         )
         return layout
 
-    # quit (TODO: if input is lagged, doesn't work)
-    @add_command(commands, "q", "(q)uit")
-    def quit(self, refresh: Callable) -> bool:
-        """Quit"""
-        return False
-
-    @add_command(commands, "?", "help")
-    def show_help(self, refresh: Callable) -> bool:
-        """Show this help page"""
-        self.mode = Mode.HELP
-        refresh()
-        return True
-
-    # FIXME: If the mode is not TABLE the table still scrolls
-    # TABLE MODE: table navigation (TODO: arrow keys)
-    # need to figure out a better refresh option here; not refreshing feels weird
-    # but refreshing on each j or k is slaggy
-    @add_command(commands, "k", "scroll up")
-    def scroll_up(self, refresh: Callable) -> bool:
-        """Scroll up one page in the table view"""
-        self.table.decrement_page()
-        refresh()
-        return True
-
-    @add_command(commands, "j", "scroll down")
-    def scroll_down(self, refresh: Callable) -> bool:
-        """Scroll down one page in the table view"""
-        self.table.increment_page()
-        refresh()
-        return True
-
-    @add_command(commands, "h", "scroll left")
-    def scroll_left(self, refresh: Callable) -> bool:
-        """Scroll left one column in the table view"""
-        self.table.column_startat -= 1
-        refresh()
-        return True
-
-    @add_command(commands, "l", "scroll right")
-    def scroll_right(self, refresh: Callable) -> bool:
-        """Scroll right one column in the table view"""
-        self.table.column_startat += 1
-        refresh()
-        return True
-
     # switch modes (TODO: input modes)
     @add_command(commands, "s", "(s)ummary")
     def summary_mode(self, refresh: Callable) -> bool:
@@ -338,7 +297,52 @@ class Interface:
 
     @add_command(commands, "t", "(t)able")
     def table_mode(self, refresh: Callable) -> bool:
-        """Show the database as a table."""
+        """Show the database as a table"""
         self.mode = Mode.TABLE
+        refresh()
+        return True
+
+    # FIXME: If the mode is not TABLE the table still scrolls
+    # TABLE MODE: table navigation (TODO: arrow keys)
+    # need to figure out a better refresh option here; not refreshing feels weird
+    # but refreshing on each j or k is slaggy
+    @add_command(commands, "h", "scroll left")
+    def scroll_left(self, refresh: Callable) -> bool:
+        """Scroll left one column in the table view"""
+        self.table.column_startat -= 1
+        refresh()
+        return True
+
+    @add_command(commands, "j", "scroll down")
+    def scroll_down(self, refresh: Callable) -> bool:
+        """Scroll down one page in the table view"""
+        self.table.increment_page()
+        refresh()
+        return True
+
+    @add_command(commands, "k", "scroll up")
+    def scroll_up(self, refresh: Callable) -> bool:
+        """Scroll up one page in the table view"""
+        self.table.decrement_page()
+        refresh()
+        return True
+
+    @add_command(commands, "l", "scroll right")
+    def scroll_right(self, refresh: Callable) -> bool:
+        """Scroll right one column in the table view"""
+        self.table.column_startat += 1
+        refresh()
+        return True
+
+    # quit (TODO: if input is lagged, doesn't work)
+    @add_command(commands, "q", "(q)uit")
+    def quit(self, refresh: Callable) -> bool:
+        """Quit"""
+        return False
+
+    @add_command(commands, "?", "help")
+    def show_help(self, refresh: Callable) -> bool:
+        """Show this help page"""
+        self.mode = Mode.HELP
         refresh()
         return True
