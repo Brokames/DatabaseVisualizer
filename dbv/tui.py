@@ -5,9 +5,7 @@ from typing import Callable
 import numpy as np
 from dask import dataframe as dd
 from rich.color import Color, parse_rgb_hex
-from rich.console import (
-    Console, ConsoleOptions, ConsoleRenderable, RenderResult
-)
+from rich.console import Console, ConsoleOptions, ConsoleRenderable, RenderResult
 from rich.layout import Layout
 from rich.padding import Padding
 from rich.panel import Panel
