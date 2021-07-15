@@ -346,14 +346,14 @@ class Interface:
         """Load a database"""
         self.mode = Mode.LOADING
         refresh()
-        # This is so the user sees the loading message!
-        sleep(2)
+        # FIXME: This is so the user sees the loading message! It should be deleted for "production" use
+        sleep(1)
         # FIXME prompt for user input
-        user_path = "Datasets/userdata2.parquet"
+        user_path = "Datasets/usrdata2.parquet"
         try:
             df = load_df(user_path)
         except OSError as exc:
-            df = pd.DataFrame([{"ERROR": f"{exc}"}])
+            df = pd.DataFrame([{"[red]ERROR[/]": exc.args}])
         self.set_df(df)
         return True
 
