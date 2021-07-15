@@ -1,9 +1,11 @@
 import enum
 import itertools
 from dataclasses import dataclass
+from time import sleep
 from typing import Any, Callable, Dict
 
 import numpy as np
+import pandas as pd
 from dask import dataframe as dd
 from rich.color import Color, parse_rgb_hex
 from rich.console import Console, ConsoleOptions, ConsoleRenderable, RenderResult
@@ -16,7 +18,7 @@ from rich.styled import Styled
 from rich.table import Column, Table
 from rich.text import Text
 
-from dbv.df import Schema
+from dbv.df import Schema, load_df
 
 bg_color = Color.from_triplet(parse_rgb_hex("1D1F21"))
 bg_color_secondary = Color.from_triplet(parse_rgb_hex("101214"))
@@ -249,11 +251,7 @@ class Interface:
     table_commands = {}
 
     def __init__(self, df: dd.DataFrame, title: str):
-        self.df = df
         self.loading = "Loading...\n\nNot implemented yet"
-        self.summary = Summary(self.df)
-        self.table = TableView(self.df)
-        self.mode = Mode.TABLE
         self.help = Help(
             {
                 "Mode Commands": self.commands,
@@ -262,10 +260,9 @@ class Interface:
         )
         self.views = {
             Mode.LOADING: self.loading,
-            Mode.SUMMARY: self.summary,
-            Mode.TABLE: self.table,
             Mode.HELP: self.help,
         }
+        self.set_df(df)
         layout = Layout()
         layout.split(
             Layout(header, name="header", size=1),
@@ -282,6 +279,18 @@ class Interface:
             Layout(body, name="input"),
         )
         self.layout = layout
+
+    def set_df(self, df: dd.DataFrame) -> None:
+        """Set the interface dataframe
+
+        Views dependent on the dataframe need to be set/updated here
+        """
+        self.df = df
+        self.summary = Summary(self.df)
+        self.table = TableView(self.df)
+        self.mode = Mode.TABLE
+        self.views[Mode.SUMMARY] = self.summary
+        self.views[Mode.TABLE] = self.table
 
     async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
         """This function is executed serially per input typed by the keyboard.
@@ -337,6 +346,15 @@ class Interface:
         """Load a database"""
         self.mode = Mode.LOADING
         refresh()
+        # This is so the user sees the loading message!
+        sleep(2)
+        # FIXME prompt for user input
+        user_path = "Datasets/userdata2.parquet"
+        try:
+            df = load_df(user_path)
+        except OSError as exc:
+            df = pd.DataFrame([{"ERROR": f"{exc}"}])
+        self.set_df(df)
         return True
 
     @add_command(commands, "v", "(v)iew")
