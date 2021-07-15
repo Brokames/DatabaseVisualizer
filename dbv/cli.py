@@ -9,6 +9,7 @@ from rich.live import Live
 
 from dbv.df import load_df
 from dbv.tui import Interface
+from dbv.my_getch import MyGetch
 
 rich.traceback.install()
 
@@ -39,6 +40,9 @@ def main(filename: str) -> None:
 
     TODO add more info to this help message
     """
+
+    df = load_df(filename)
+
     # stores terminal attributes to restore after closing the application
     stdin = sys.stdin.fileno()
     tattr = tty.tcgetattr(stdin)
@@ -48,7 +52,6 @@ def main(filename: str) -> None:
         # and can be read immediately without input buffering.
         tty.setcbreak(sys.stdin.fileno())
 
-        df = load_df(filename)
         interface = Interface(df, filename)
 
         with Live(interface, screen=True) as live:
