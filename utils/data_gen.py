@@ -164,3 +164,6 @@ class DataGenerator:
     def gen_pandas_df(self, num_rows: int = None) -> pd.DataFrame:
         """Returns the data as a pandas dataframe"""
         return pd.DataFrame(self.gen_rows(num_rows))
+
+dg = DataGenerator()
+print(list(dg.gen_rows(2)))

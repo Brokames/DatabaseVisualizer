@@ -1,30 +1,21 @@
 
-import termios
-
-
-EOT = "\x04"
-SIGINT = "\x03"
-SIGTSTP = "\x1a"
+EOT = "\x04"  # CTRL + D
+SIGINT = "\x03"  # CTRL + C
+SIGTSTP = "\x1a"  # CTRL + Z
 
 
 class MyGetch:
     """Gets a single character from standard input without echo to screen"""
 
-    def __init__(self) -> None:
-        try:
-            import msvcrt
-        except ImportError:
-            import sys
-            import tty
-
     def _getch(self) -> None:
+        """Operating sytem aware implementation of getch() like function"""
         try:
             import msvcrt
-            return msvcrt.getch()
+            return msvcrt.getch().decode()
         except ImportError:
             import sys
+            import termios
             import tty
-
 
             # Puts the terminal into cbreak mode, meaning keys aren't echoed to the screen
             # and can be read immediately without input buffering.
@@ -34,12 +25,13 @@ class MyGetch:
             try:
                 tty.setcbreak(sys.stdin.fileno())
                 ch = sys.stdin.read(1)
-            finally: # restores terminal to default behavior
+            finally:  # restores terminal to default behavior
                 # FIXME: TCSADRAIN vs TCSANOW ? Adrain might remove race conditions?
-                termios.tcsetattr(fd, termios.TCSADRAIN, tattr) 
+                termios.tcsetattr(fd, termios.TCSADRAIN, tattr)
             return ch
 
     def __call__(self) -> bytes:
+        """Returns a single character from stdin using _getch()"""
         ch = self._getch()
 
         if ch == SIGINT or ch == SIGTSTP:
@@ -48,7 +40,3 @@ class MyGetch:
             raise EOFError
 
         return ch
-
-
-    def _getch_unix(self) -> bytes:
-        pass

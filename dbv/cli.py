@@ -1,6 +1,4 @@
 import asyncio
-import sys
-import tty
 from typing import Awaitable, Callable
 
 import click
@@ -8,8 +6,8 @@ import rich.traceback
 from rich.live import Live
 
 from dbv.df import load_df
-from dbv.tui import Interface
 from dbv.my_getch import MyGetch
+from dbv.tui import Interface
 
 rich.traceback.install()
 
@@ -18,7 +16,7 @@ KeyboardHandler = Callable[[str, RefreshCallback], Awaitable[bool]]
 
 
 async def consume_keyboard_events(
-    keyboard_handler: KeyboardHandler, live: Live
+    getch: MyGetch, keyboard_handler: KeyboardHandler, live: Live
 ) -> None:
     """Read from stdin and execute the keyboard handler.
 
@@ -27,7 +25,10 @@ async def consume_keyboard_events(
 
     When `keyboard_handler` returns falsey, exit.
     """
-    while ch := sys.stdin.read(1):
+    while ch := getch():
+
+        with open("output.txt", "a") as fp:
+            fp.write(f"read character {ch}\n")
         should_continue = await keyboard_handler(ch, live.refresh)
         if not should_continue:
             break
@@ -40,28 +41,18 @@ def main(filename: str) -> None:
 
     TODO add more info to this help message
     """
+    open("output.txt", "w").close()
 
     df = load_df(filename)
+    getch = MyGetch()
 
-    # stores terminal attributes to restore after closing the application
-    stdin = sys.stdin.fileno()
-    tattr = tty.tcgetattr(stdin)
+    interface = Interface(df, filename)
 
-    try:
-        # Puts the terminal into cbreak mode, meaning keys aren't echoed to the screen
-        # and can be read immediately without input buffering.
-        tty.setcbreak(sys.stdin.fileno())
-
-        interface = Interface(df, filename)
-
-        with Live(interface, screen=True) as live:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(
-                consume_keyboard_events(interface.keyboard_handler, live)
-            )
-
-    finally:  # restores the terminal to default behavior
-        tty.tcsetattr(stdin, tty.TCSANOW, tattr)
+    with Live(interface, screen=True) as live:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(
+            consume_keyboard_events(getch, interface.keyboard_handler, live)
+        )
 
 
 if __name__ == "__main__":
