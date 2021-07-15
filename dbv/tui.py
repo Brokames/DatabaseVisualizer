@@ -250,7 +250,7 @@ class Interface:
 
     def __init__(self, df: dd.DataFrame, title: str):
         self.df = df
-        self.loading = "Loading..."
+        self.loading = "Loading...\n\nNot implemented yet"
         self.summary = Summary(self.df)
         self.table = TableView(self.df)
         self.mode = Mode.TABLE
