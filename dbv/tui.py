@@ -266,6 +266,22 @@ class Interface:
             Mode.TABLE: self.table,
             Mode.HELP: self.help,
         }
+        layout = Layout()
+        layout.split(
+            Layout(header, name="header", size=1),
+            mode_line(self.mode),
+            Layout(body, name="main"),
+        )
+        layout["main"].split_row(
+            Layout(body, name="left", ratio=2),
+            Layout("Thinking...", name="output", ratio=3),
+        )
+        layout["left"].split_column(
+            Layout(body, name="options", ratio=2),
+            Layout(body, name="console", ratio=3),
+            Layout(body, name="input"),
+        )
+        self.layout = layout
 
     async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
         """This function is executed serially per input typed by the keyboard.
@@ -288,25 +304,11 @@ class Interface:
 
     def __rich__(self) -> ConsoleRenderable:
         """Render the interface layout."""
-        layout = Layout()
-        layout.split(
-            Layout(header, name="header", size=1),
-            mode_line(self.mode),
-            Layout(body, name="main"),
-        )
+        self.layout["mode_line"].update(mode_line(self.mode).children)
         output = self.views[self.mode]
         padded_output = Styled(Padding(output, (1, 2)), body_style)
-
-        layout["main"].split_row(
-            Layout(body, name="left", ratio=2),
-            Layout(padded_output, name="output", ratio=3),
-        )
-        layout["left"].split_column(
-            Layout(body, name="options", ratio=2),
-            Layout(body, name="console", ratio=3),
-            Layout(body, name="input"),
-        )
-        return layout
+        self.layout["main"]["output"].update(padded_output)
+        return self.layout
 
     # switch modes (TODO: input modes)
     @add_command(commands, "s", "(s)ummary")
@@ -327,6 +329,13 @@ class Interface:
     def load_command(self, refresh: Callable) -> bool:
         """Load a database"""
         self.mode = Mode.LOADING
+        refresh()
+        return True
+
+    @add_command(commands, "v", "(v)iew")
+    def toggle_view(self, refresh: Callable) -> bool:
+        """Toggle the layout view"""
+        self.layout["left"].visible = not self.layout["left"].visible
         refresh()
         return True
 
