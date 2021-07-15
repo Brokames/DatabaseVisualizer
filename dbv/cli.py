@@ -6,7 +6,7 @@ import rich.traceback
 from rich.live import Live
 
 from dbv.df import load_df
-from dbv.my_getch import MyGetch
+from dbv.get_character import GetCharacter
 from dbv.tui import Interface
 
 rich.traceback.install()
@@ -16,7 +16,7 @@ KeyboardHandler = Callable[[str, RefreshCallback], Awaitable[bool]]
 
 
 async def consume_keyboard_events(
-    getch: MyGetch, keyboard_handler: KeyboardHandler, live: Live
+    getch: GetCharacter, keyboard_handler: KeyboardHandler, live: Live
 ) -> None:
     """Read from stdin and execute the keyboard handler.
 
@@ -26,9 +26,6 @@ async def consume_keyboard_events(
     When `keyboard_handler` returns falsey, exit.
     """
     while ch := getch():
-
-        with open("output.txt", "a") as fp:
-            fp.write(f"read character {ch}\n")
         should_continue = await keyboard_handler(ch, live.refresh)
         if not should_continue:
             break
@@ -44,7 +41,7 @@ def main(filename: str) -> None:
     open("output.txt", "w").close()
 
     df = load_df(filename)
-    getch = MyGetch()
+    getch = GetCharacter()
 
     interface = Interface(df, filename)
 
