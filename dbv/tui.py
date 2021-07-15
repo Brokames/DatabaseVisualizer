@@ -2,6 +2,7 @@ import enum
 import itertools
 from typing import Callable
 
+import numpy as np
 from dask import dataframe as dd
 from rich.color import Color, parse_rgb_hex
 from rich.console import (
@@ -13,7 +14,7 @@ from rich.panel import Panel
 from rich.pretty import Pretty
 from rich.style import Style
 from rich.styled import Styled
-from rich.table import Table
+from rich.table import Column, Table
 from rich.text import Text
 
 from dbv.df import Schema
@@ -80,29 +81,92 @@ class TableView:
 
     def __init__(self, df: dd.DataFrame):
         self.df = df
-        self.startat = 0
+        self._last_page_size = 0
+        self._startat = 0
+        self._column_startat = 0
         self.filter = None
+
+    @property
+    def startat(self) -> int:
+        """Which row to start rendering at."""
+        return self._startat
+
+    @startat.setter
+    def startat(self, startat: int) -> None:
+        """Setter for startat."""
+        self._startat = min(len(self.df) - 1, max(0, startat))
+
+    @property
+    def column_startat(self) -> int:
+        """Which column to start rendering at."""
+        return self._column_startat
+
+    @column_startat.setter
+    def column_startat(self, column_startat: int) -> None:
+        """Setter for column_startat."""
+        self._column_startat = min(len(self.df.columns) - 1, max(0, column_startat))
+
+    def increment_page(self) -> None:
+        """Increment startat by the last known page size."""
+        self.startat += self._last_page_size
+
+    def decrement_page(self) -> None:
+        """Decrement startat by the last known page size."""
+        self.startat -= self._last_page_size
 
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
         """Render table dynamically based on provided space and filtering."""
-        # -6 for title, header, spacers
+        # -6 for title, header, spacers, -1 for footer
         height = options.height - 7  # could also use max_height?
-        # width = options.max_width  # could also use min_width?
+        width = options.max_width - 2  # could also use min_width?
 
-        filtered = self.df.pipe(lambda df: df if not self.filter else df[self.filter])
-        paged = itertools.islice(
-            filtered.itertuples(), self.startat, self.startat + height
+        # saved for page increment
+        self._last_page_size = height
+
+        filtered = (
+            self.df
+            # apply filter
+            .pipe(lambda df: df if not self.filter else df[self.filter])
+            # start at self.column_startat
+            .pipe(lambda df: df.iloc[:, self.column_startat :])  # noqa: E203
         )
-
-        table = Table(expand=True, row_styles=[body_style, body_style_secondary])
-        table.add_column(" ")
-        for column in filtered.columns:
-            table.add_column(column)
+        paged = list(
+            itertools.islice(filtered.itertuples(), self.startat, self.startat + height)
+        )
 
         def format(v: any) -> ConsoleRenderable:
             return Text(v) if isinstance(v, str) else Pretty(v)
+
+        table = Table(expand=True, row_styles=[body_style, body_style_secondary])
+
+        # The following code computes the number of columns we can comfortable render
+        # in the space, starting at self.column_startat, before finally trimming down
+        # to just those columns and then rendering.
+        column_names = [" ", *filtered.columns]
+        columns = [
+            Column(name, _cells=[format(v) for v in values])
+            for name, values in zip(column_names, zip(*paged))
+        ]
+
+        column_widths = [
+            table._measure_column(console, options, column) for column in columns
+        ]
+        # +1 for column separator
+        max_column_widths = np.array([width.maximum for width in column_widths]) + 1
+        total_width = np.add.accumulate(max_column_widths)
+        # np.where returns tuple of list of elements for each dimension
+        cant_render = np.where(total_width > width)[0]
+
+        # cant_render[0], if it exists, is the first column indexd we don't have space for
+        if cant_render.size:  # np.ndarray
+            max_column = max(cant_render[0], self.column_startat + 1)
+            column_names = column_names[:max_column]
+            paged = [row[:max_column] for row in paged]
+
+        for column_name in column_names:
+            table.add_column(column_name)
 
         for row in paged:
             table.add_row(*map(format, row))
@@ -136,14 +200,32 @@ class Interface:
         It does not need to be thread safe; the keyboard event generator will not
         call it in parallel. `ch` will always have length 1.
         """
+        # quit (TODO: if input is lagged, doesn't work)
         if ch == "q":
             return False
+
+        # switch modes (TODO: input modes)
         elif ch == "s":
             self.mode = Mode.SUMMARY
             refresh()
         elif ch == "t":
             self.mode = Mode.TABLE
             refresh()
+
+        # TABLE MODE: table navigation (TODO: arrow keys)
+        # need to figure out a better refresh option here; not refreshing feels weird
+        # but refreshing on each j or k is slaggy
+        elif ch == "j":
+            self.table.increment_page()
+        elif ch == "k":
+            self.table.decrement_page()
+        elif ch == "l":
+            self.table.column_startat += 1
+            refresh()
+        elif ch == "h":
+            self.table.column_startat -= 1
+            refresh()
+
         return True
 
     def __rich__(self) -> ConsoleRenderable:
