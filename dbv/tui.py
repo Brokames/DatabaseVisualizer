@@ -41,6 +41,7 @@ class Mode(enum.Enum):
         4. Add a row to Help.__rich__ for the help string
     """
 
+    LOADING = "(L)oad"
     SUMMARY = "(s)ummary"
     TABLE = "(t)able"
     HELP = "(?)help"
@@ -249,6 +250,7 @@ class Interface:
 
     def __init__(self, df: dd.DataFrame, title: str):
         self.df = df
+        self.loading = "Loading..."
         self.summary = Summary(self.df)
         self.table = TableView(self.df)
         self.mode = Mode.TABLE
@@ -258,6 +260,12 @@ class Interface:
                 "Table Commands": self.table_commands,
             }
         )
+        self.views = {
+            Mode.LOADING: self.loading,
+            Mode.SUMMARY: self.summary,
+            Mode.TABLE: self.table,
+            Mode.HELP: self.help,
+        }
 
     async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
         """This function is executed serially per input typed by the keyboard.
@@ -286,10 +294,7 @@ class Interface:
             mode_line(self.mode),
             Layout(body, name="main"),
         )
-        if self.mode == Mode.HELP:
-            output = self.help
-        else:
-            output = self.table if self.mode == Mode.TABLE else self.summary
+        output = self.views[self.mode]
         padded_output = Styled(Padding(output, (1, 2)), body_style)
 
         layout["main"].split_row(
@@ -315,6 +320,13 @@ class Interface:
     def table_mode(self, refresh: Callable) -> bool:
         """Show the database as a table"""
         self.mode = Mode.TABLE
+        refresh()
+        return True
+
+    @add_command(commands, "L", "(L)oad")
+    def load_command(self, refresh: Callable) -> bool:
+        """Load a database"""
+        self.mode = Mode.LOADING
         refresh()
         return True
 
