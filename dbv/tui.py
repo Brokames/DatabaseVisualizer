@@ -71,10 +71,8 @@ class Help:
     """Rich-renderable command help page"""
 
     def __init__(self, command_dict: dict):
-        layout = Layout()
-        layout.split_column(*[Layout(name=idx) for idx in range(len(command_dict))])
-        for idx, items in enumerate(command_dict.items()):
-            title, commands = items
+        self.tables = []
+        for title, commands in command_dict.items():
             table = Table(
                 title=title,
                 expand=True,
@@ -85,11 +83,13 @@ class Help:
             table.add_column("Description")
             for key, command in commands.items():
                 table.add_row(key, command.short_description, command.help)
-            layout[idx].update(table)
-        self.layout = layout
+            self.tables.append(table)
 
-    def __rich__(self) -> ConsoleRenderable:
-        return self.layout
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+        for table in self.tables:
+            yield table
 
 
 class Summary:
@@ -347,6 +347,20 @@ class Interface:
     def scroll_right(self, refresh: Callable) -> bool:
         """Scroll right one column in the table view"""
         self.table.column_startat += 1
+        refresh()
+        return True
+
+    @add_command(table_commands, "g", "Go to top")
+    def go_to_top(self, refresh: Callable) -> bool:
+        """Go to the top of the table"""
+        self.table.startat = 0
+        refresh()
+        return True
+
+    @add_command(table_commands, "G", "Go to bottom")
+    def go_to_bottom(self, refresh: Callable) -> bool:
+        """Go to the bottom of the table"""
+        self.table.startat = len(self.df) - self.table._last_page_size
         refresh()
         return True
 
