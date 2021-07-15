@@ -1,4 +1,3 @@
-
 EOT = "\x04"  # CTRL + D
 SIGINT = "\x03"  # CTRL + C
 SIGTSTP = "\x1a"  # CTRL + Z
@@ -11,6 +10,7 @@ class MyGetch:
         """Operating sytem aware implementation of getch() like function"""
         try:
             import msvcrt
+
             return msvcrt.getch().decode()
         except ImportError:
             import sys
