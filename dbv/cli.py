@@ -4,10 +4,13 @@ import tty
 from typing import Awaitable, Callable
 
 import click
+import rich.traceback
 from rich.live import Live
 
 from dbv.df import load_df
 from dbv.tui import Interface
+
+rich.traceback.install()
 
 RefreshCallback = Callable[[], None]
 KeyboardHandler = Callable[[str, RefreshCallback], Awaitable[bool]]
