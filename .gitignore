@@ -30,3 +30,9 @@ build/
 .vscode/
 # MacOS
 .DS_Store
+
+Datasets/userdata1.parquet
+Datasets/userdata2.parquet
+Datasets/userdata3.parquet
+Datasets/userdata4.parquet
+Datasets/userdata5.parquet
