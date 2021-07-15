@@ -67,18 +67,19 @@ def mode_line(current_mode: Mode) -> Layout:
 
 
 class Help:
-    """Show this help page"""
+    """Rich-renderable command help page"""
 
-    # Rich-renderable command help page
-
-    def __rich__(self) -> ConsoleRenderable:
+    def __init__(self, command_dict: dict):
         table = Table(title="Command Help")
         table.add_column("Command")
+        table.add_column("Short")
         table.add_column("Description")
-        table.add_row(Mode.SUMMARY.value, Summary.__doc__)
-        table.add_row(Mode.TABLE.value, TableView.__doc__)
-        table.add_row(Mode.HELP.value, Help.__doc__)
-        return table
+        for key, command in command_dict.items():
+            table.add_row(key, command.short_description, command.help)
+        self.table = table
+
+    def __rich__(self) -> ConsoleRenderable:
+        return self.table
 
 
 class Summary:
@@ -240,7 +241,7 @@ class Interface:
         self.summary = Summary(self.df)
         self.table = TableView(self.df)
         self.mode = Mode.TABLE
-        self.help = Help()
+        self.help = Help(self.commands)
 
     async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
         """This function is executed serially per input typed by the keyboard.
@@ -303,12 +304,14 @@ class Interface:
     def scroll_up(self, refresh: Callable) -> bool:
         """Scroll up one page in the table view"""
         self.table.decrement_page()
+        refresh()
         return True
 
     @add_command(commands, "j", "scroll down")
     def scroll_down(self, refresh: Callable) -> bool:
         """Scroll down one page in the table view"""
         self.table.increment_page()
+        refresh()
         return True
 
     @add_command(commands, "h", "scroll left")
