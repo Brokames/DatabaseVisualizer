@@ -360,7 +360,7 @@ class Interface:
     @add_command(table_commands, "G", "Go to bottom")
     def go_to_bottom(self, refresh: Callable) -> bool:
         """Go to the bottom of the table"""
-        self.table.startat = len(self.df)
+        self.table.startat = len(self.df) - self.table._last_page_size
         refresh()
         return True
 
