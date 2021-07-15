@@ -193,8 +193,9 @@ class TableView:
         cant_render = np.where(total_width > width)[0]
 
         # cant_render[0], if it exists, is the first column indexd we don't have space for
+        min_columns_shown = 2
         if cant_render.size:  # np.ndarray
-            max_column = max(cant_render[0], self.column_startat + 1)
+            max_column = max(min_columns_shown, cant_render[0], self.column_startat + 1)
             column_names = column_names[:max_column]
             paged = [row[:max_column] for row in paged]
 
@@ -350,14 +351,14 @@ class Interface:
         self.views[Mode.LOADING] = loading
         refresh()
         # FIXME: This is so the user sees the loading message! It should be deleted for "production" use
-        sleep(2)
+        sleep(1)
         # FIXME prompt for user input
         user_path = "Datasets/usrdata2.parquet"
         try:
             df = load_df(user_path)
         except OSError as exc:
             # FIXME: if the space is too small this doesn't appear in the table
-            df = pd.DataFrame([{"[red]ERROR[/]": exc.args}])
+            df = pd.DataFrame([{"[red]ERROR[/]": exc.args[0]}])
         self.set_df(df)
         return True
 
