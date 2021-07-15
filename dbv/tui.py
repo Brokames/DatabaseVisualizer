@@ -1,6 +1,6 @@
 import enum
 import itertools
-from typing import Callable
+from typing import Any, Callable, Dict
 
 import numpy as np
 from dask import dataframe as dd
@@ -194,6 +194,32 @@ class TableView:
         yield f"... {len(filtered)} total rows"
 
 
+class Command:
+    """Interface command class"""
+
+    def __init__(self, key: str, short_description: str, fn: Callable, fn_doc: str):
+        self.key = key
+        self.short_description = short_description
+        self.fn = fn
+        self.help = fn_doc
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        """Call command"""
+        self.fn(*args, **kwds)
+
+
+def add_command(command_dict: Dict, key: str, short_description: str) -> Callable:
+    """Add a command to command_dict"""
+
+    def decorator(fn: Callable) -> Callable:
+        if key in command_dict:
+            raise KeyError(f"Command {key} already exists")
+        command_dict[key] = Command(key, short_description, fn, fn.__doc__)
+        return fn
+
+    return decorator
+
+
 class Interface:
     """Class maintaining state for the interface.
 
@@ -206,6 +232,8 @@ class Interface:
     Interface to become a big blob where we throw all of the code. Ideally Interface
     should be a "controller" and should dole out responsibility of rendering to others.
     """
+
+    commands = {}
 
     def __init__(self, df: dd.DataFrame, title: str):
         self.df = df
@@ -220,35 +248,12 @@ class Interface:
         It does not need to be thread safe; the keyboard event generator will not
         call it in parallel. `ch` will always have length 1.
         """
-        # quit (TODO: if input is lagged, doesn't work)
-        if ch == "q":
-            return False
-
-        # switch modes (TODO: input modes)
-        elif ch == "s":
-            self.mode = Mode.SUMMARY
-            refresh()
-        elif ch == "t":
-            self.mode = Mode.TABLE
-            refresh()
-
-        # TABLE MODE: table navigation (TODO: arrow keys)
-        # need to figure out a better refresh option here; not refreshing feels weird
-        # but refreshing on each j or k is slaggy
-        elif ch == "j":
-            self.table.increment_page()
-        elif ch == "k":
-            self.table.decrement_page()
-        elif ch == "l":
-            self.table.column_startat += 1
-            refresh()
-        elif ch == "h":
-            self.table.column_startat -= 1
-            refresh()
-
-        elif ch == "?":
-            self.mode = Mode.HELP
-            refresh()
+        # If the command is registered, call it
+        if ch in self.commands:
+            return self.commands[ch].fn(self, refresh)
+        else:
+            # TODO warn about unknown command?
+            pass
 
         return True
 
@@ -276,3 +281,61 @@ class Interface:
             Layout(body, name="input"),
         )
         return layout
+
+    # quit (TODO: if input is lagged, doesn't work)
+    @add_command(commands, "q", "(q)uit")
+    def quit(self, refresh: Callable) -> bool:
+        """Quit"""
+        return False
+
+    @add_command(commands, "?", "help")
+    def show_help(self, refresh: Callable) -> bool:
+        """Show this help page"""
+        self.mode = Mode.HELP
+        refresh()
+        return True
+
+    # FIXME: If the mode is not TABLE the table still scrolls
+    # TABLE MODE: table navigation (TODO: arrow keys)
+    # need to figure out a better refresh option here; not refreshing feels weird
+    # but refreshing on each j or k is slaggy
+    @add_command(commands, "k", "scroll up")
+    def scroll_up(self, refresh: Callable) -> bool:
+        """Scroll up one page in the table view"""
+        self.table.decrement_page()
+        return True
+
+    @add_command(commands, "j", "scroll down")
+    def scroll_down(self, refresh: Callable) -> bool:
+        """Scroll down one page in the table view"""
+        self.table.increment_page()
+        return True
+
+    @add_command(commands, "h", "scroll left")
+    def scroll_left(self, refresh: Callable) -> bool:
+        """Scroll left one column in the table view"""
+        self.table.column_startat -= 1
+        refresh()
+        return True
+
+    @add_command(commands, "l", "scroll right")
+    def scroll_right(self, refresh: Callable) -> bool:
+        """Scroll right one column in the table view"""
+        self.table.column_startat += 1
+        refresh()
+        return True
+
+    # switch modes (TODO: input modes)
+    @add_command(commands, "s", "(s)ummary")
+    def summary_mode(self, refresh: Callable) -> bool:
+        """Show a summary of the database"""
+        self.mode = Mode.SUMMARY
+        refresh()
+        return True
+
+    @add_command(commands, "t", "(t)able")
+    def table_mode(self, refresh: Callable) -> bool:
+        """Show the database as a table."""
+        self.mode = Mode.TABLE
+        refresh()
+        return True
