@@ -70,20 +70,25 @@ class Help:
     """Rich-renderable command help page"""
 
     def __init__(self, command_dict: dict):
-        table = Table(
-            title="Command Help",
-            expand=True,
-            row_styles=[body_style, body_style_secondary],
-        )
-        table.add_column("Command")
-        table.add_column("Short")
-        table.add_column("Description")
-        for key, command in command_dict.items():
-            table.add_row(key, command.short_description, command.help)
-        self.table = table
+        layout = Layout()
+        layout.split_column(*[Layout(name=idx) for idx in range(len(command_dict))])
+        for idx, items in enumerate(command_dict.items()):
+            title, commands = items
+            table = Table(
+                title=title,
+                expand=True,
+                row_styles=[body_style, body_style_secondary],
+            )
+            table.add_column("Command")
+            table.add_column("Short")
+            table.add_column("Description")
+            for key, command in commands.items():
+                table.add_row(key, command.short_description, command.help)
+            layout[idx].update(table)
+        self.layout = layout
 
     def __rich__(self) -> ConsoleRenderable:
-        return self.table
+        return self.layout
 
 
 class Summary:
@@ -239,13 +244,19 @@ class Interface:
     """
 
     commands = {}
+    table_commands = {}
 
     def __init__(self, df: dd.DataFrame, title: str):
         self.df = df
         self.summary = Summary(self.df)
         self.table = TableView(self.df)
         self.mode = Mode.TABLE
-        self.help = Help(self.commands)
+        self.help = Help(
+            {
+                "Mode Commands": self.commands,
+                "Table Commands": self.table_commands,
+            }
+        )
 
     async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
         """This function is executed serially per input typed by the keyboard.
@@ -254,11 +265,15 @@ class Interface:
         call it in parallel. `ch` will always have length 1.
         """
         # If the command is registered, call it
+        if self.mode == Mode.TABLE:
+            if ch in self.table_commands:
+                return self.table_commands[ch].fn(self, refresh)
+
         if ch in self.commands:
             return self.commands[ch].fn(self, refresh)
-        else:
-            # TODO warn about unknown command?
-            pass
+
+        # TODO If a command hasn't been found by this point it means there isn't
+        # one defined. Warn about unknown command?
 
         return True
 
@@ -306,28 +321,28 @@ class Interface:
     # TABLE MODE: table navigation (TODO: arrow keys)
     # need to figure out a better refresh option here; not refreshing feels weird
     # but refreshing on each j or k is slaggy
-    @add_command(commands, "h", "scroll left")
+    @add_command(table_commands, "h", "scroll left")
     def scroll_left(self, refresh: Callable) -> bool:
         """Scroll left one column in the table view"""
         self.table.column_startat -= 1
         refresh()
         return True
 
-    @add_command(commands, "j", "scroll down")
+    @add_command(table_commands, "j", "scroll down")
     def scroll_down(self, refresh: Callable) -> bool:
         """Scroll down one page in the table view"""
         self.table.increment_page()
         refresh()
         return True
 
-    @add_command(commands, "k", "scroll up")
+    @add_command(table_commands, "k", "scroll up")
     def scroll_up(self, refresh: Callable) -> bool:
         """Scroll up one page in the table view"""
         self.table.decrement_page()
         refresh()
         return True
 
-    @add_command(commands, "l", "scroll right")
+    @add_command(table_commands, "l", "scroll right")
     def scroll_right(self, refresh: Callable) -> bool:
         """Scroll right one column in the table view"""
         self.table.column_startat += 1
