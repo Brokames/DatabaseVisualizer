@@ -1,6 +1,7 @@
 import enum
 import itertools
-from typing import Callable
+from dataclasses import dataclass
+from typing import Any, Callable, Dict
 
 import numpy as np
 from dask import dataframe as dd
@@ -37,10 +38,12 @@ class Mode(enum.Enum):
         1. add an element here
         2. add a keyboard shortcut to switch to the mode in keyboard_handler
         3. update __rich__ to change rendering based on the mode.
+        4. Add a row to Help.__rich__ for the help string
     """
 
     SUMMARY = "(s)ummary"
     TABLE = "(t)able"
+    HELP = "(?)help"
 
 
 def mode_line(current_mode: Mode) -> Layout:
@@ -64,8 +67,35 @@ def mode_line(current_mode: Mode) -> Layout:
     return line
 
 
+class Help:
+    """Rich-renderable command help page"""
+
+    def __init__(self, command_dict: dict):
+        layout = Layout()
+        layout.split_column(*[Layout(name=idx) for idx in range(len(command_dict))])
+        for idx, items in enumerate(command_dict.items()):
+            title, commands = items
+            table = Table(
+                title=title,
+                expand=True,
+                row_styles=[body_style, body_style_secondary],
+            )
+            table.add_column("Command")
+            table.add_column("Short")
+            table.add_column("Description")
+            for key, command in commands.items():
+                table.add_row(key, command.short_description, command.help)
+            layout[idx].update(table)
+        self.layout = layout
+
+    def __rich__(self) -> ConsoleRenderable:
+        return self.layout
+
+
 class Summary:
-    """Rich-renderable summary pane for a DataFrame."""
+    """Show a summary of the database"""
+
+    # Rich-renderable summary pane for a DataFrame.
 
     def __init__(self, df: dd.DataFrame):
         self.df = df
@@ -75,7 +105,9 @@ class Summary:
 
 
 class TableView:
-    """Rich-renderable summary pane for a DataFrame."""
+    """Show the database as a table"""
+
+    # Rich-renderable summary pane for a DataFrame.
 
     def __init__(self, df: dd.DataFrame):
         self.df = df
@@ -173,6 +205,32 @@ class TableView:
         yield f"... {len(filtered)} total rows"
 
 
+@dataclass
+class Command:
+    """Interface command dataclass"""
+
+    key: str
+    short_description: str
+    fn: Callable
+    help: str
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        """Call command"""
+        return self.fn(*args, **kwds)
+
+
+def add_command(command_dict: Dict, key: str, short_description: str) -> Callable:
+    """Add a command to command_dict"""
+
+    def decorator(fn: Callable) -> Callable:
+        if key in command_dict:
+            raise KeyError(f"Command {key} already exists")
+        command_dict[key] = Command(key, short_description, fn, fn.__doc__)
+        return fn
+
+    return decorator
+
+
 class Interface:
     """Class maintaining state for the interface.
 
@@ -186,11 +244,20 @@ class Interface:
     should be a "controller" and should dole out responsibility of rendering to others.
     """
 
+    commands = {}
+    table_commands = {}
+
     def __init__(self, df: dd.DataFrame, title: str):
         self.df = df
         self.summary = Summary(self.df)
         self.table = TableView(self.df)
         self.mode = Mode.TABLE
+        self.help = Help(
+            {
+                "Mode Commands": self.commands,
+                "Table Commands": self.table_commands,
+            }
+        )
 
     async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
         """This function is executed serially per input typed by the keyboard.
@@ -198,31 +265,16 @@ class Interface:
         It does not need to be thread safe; the keyboard event generator will not
         call it in parallel. `ch` will always have length 1.
         """
-        # quit (TODO: if input is lagged, doesn't work)
-        if ch == "q":
-            return False
+        # If the command is registered, call it
+        if self.mode == Mode.TABLE:
+            if ch in self.table_commands:
+                return self.table_commands[ch].fn(self, refresh)
 
-        # switch modes (TODO: input modes)
-        elif ch == "s":
-            self.mode = Mode.SUMMARY
-            refresh()
-        elif ch == "t":
-            self.mode = Mode.TABLE
-            refresh()
+        if ch in self.commands:
+            return self.commands[ch].fn(self, refresh)
 
-        # TABLE MODE: table navigation (TODO: arrow keys)
-        # need to figure out a better refresh option here; not refreshing feels weird
-        # but refreshing on each j or k is slaggy
-        elif ch == "j":
-            self.table.increment_page()
-        elif ch == "k":
-            self.table.decrement_page()
-        elif ch == "l":
-            self.table.column_startat += 1
-            refresh()
-        elif ch == "h":
-            self.table.column_startat -= 1
-            refresh()
+        # If a command hasn't been found by this point it means there isn't one
+        # defined.
 
         return True
 
@@ -234,7 +286,10 @@ class Interface:
             mode_line(self.mode),
             Layout(body, name="main"),
         )
-        output = self.table if self.mode == Mode.TABLE else self.summary
+        if self.mode == Mode.HELP:
+            output = self.help
+        else:
+            output = self.table if self.mode == Mode.TABLE else self.summary
         padded_output = Styled(Padding(output, (1, 2)), body_style)
 
         layout["main"].split_row(
@@ -247,3 +302,63 @@ class Interface:
             Layout(body, name="input"),
         )
         return layout
+
+    # switch modes (TODO: input modes)
+    @add_command(commands, "s", "(s)ummary")
+    def summary_mode(self, refresh: Callable) -> bool:
+        """Show a summary of the database"""
+        self.mode = Mode.SUMMARY
+        refresh()
+        return True
+
+    @add_command(commands, "t", "(t)able")
+    def table_mode(self, refresh: Callable) -> bool:
+        """Show the database as a table"""
+        self.mode = Mode.TABLE
+        refresh()
+        return True
+
+    # FIXME: If the mode is not TABLE the table still scrolls
+    # TABLE MODE: table navigation (TODO: arrow keys)
+    # need to figure out a better refresh option here; not refreshing feels weird
+    # but refreshing on each j or k is slaggy
+    @add_command(table_commands, "h", "scroll left")
+    def scroll_left(self, refresh: Callable) -> bool:
+        """Scroll left one column in the table view"""
+        self.table.column_startat -= 1
+        refresh()
+        return True
+
+    @add_command(table_commands, "j", "scroll down")
+    def scroll_down(self, refresh: Callable) -> bool:
+        """Scroll down one page in the table view"""
+        self.table.increment_page()
+        refresh()
+        return True
+
+    @add_command(table_commands, "k", "scroll up")
+    def scroll_up(self, refresh: Callable) -> bool:
+        """Scroll up one page in the table view"""
+        self.table.decrement_page()
+        refresh()
+        return True
+
+    @add_command(table_commands, "l", "scroll right")
+    def scroll_right(self, refresh: Callable) -> bool:
+        """Scroll right one column in the table view"""
+        self.table.column_startat += 1
+        refresh()
+        return True
+
+    # quit (TODO: if input is lagged, doesn't work)
+    @add_command(commands, "q", "(q)uit")
+    def quit(self, refresh: Callable) -> bool:
+        """Quit"""
+        return False
+
+    @add_command(commands, "?", "help")
+    def show_help(self, refresh: Callable) -> bool:
+        """Show this help page"""
+        self.mode = Mode.HELP
+        refresh()
+        return True
