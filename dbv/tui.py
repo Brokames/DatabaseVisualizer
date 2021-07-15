@@ -216,7 +216,7 @@ class Command:
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         """Call command"""
-        self.fn(*args, **kwds)
+        return self.fn(*args, **kwds)
 
 
 def add_command(command_dict: Dict, key: str, short_description: str) -> Callable:
@@ -273,8 +273,8 @@ class Interface:
         if ch in self.commands:
             return self.commands[ch].fn(self, refresh)
 
-        # TODO If a command hasn't been found by this point it means there isn't
-        # one defined. Warn about unknown command?
+        # If a command hasn't been found by this point it means there isn't one
+        # defined.
 
         return True
 
