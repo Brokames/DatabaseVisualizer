@@ -3,7 +3,7 @@ import enum
 import random
 from collections import namedtuple
 from itertools import islice, starmap
-from typing import Any, Dict, Generator, Iterator, List
+from typing import Any, Dict, Generator, Iterator, Tuple
 
 import pandas as pd
 from faker import Faker
@@ -35,15 +35,7 @@ class Columns(enum.Enum):
     SSN = 7
 
 
-DEFAULT_COLUMNS = [
-    Columns.NAME,
-    Columns.ADDRESS,
-    Columns.PHONE_NUMBER,
-    Columns.DATE_OF_BIRTH,
-    Columns.JOB,
-    Columns.BANK_ACCOUNT,
-    Columns.SSN,
-]
+DEFAULT_COLUMNS = tuple(Columns)
 
 
 class DataGenerator:
@@ -61,7 +53,7 @@ class DataGenerator:
 
     def __init__(
         self,
-        columns: List[Columns] = DEFAULT_COLUMNS,
+        columns: Tuple[Columns] = DEFAULT_COLUMNS,
         seed: int = 0,
     ) -> None:
         self.columns = columns
@@ -69,8 +61,8 @@ class DataGenerator:
         self.data_generators = self._get_data_generators()
         self.faker = Faker(seed=seed)
 
-    def _get_headers(self) -> List[str]:
-        """Retuns a list of headers for the columns"""
+    def _get_headers(self) -> Tuple[str]:
+        """Retuns a tuple of headers for the columns"""
         header_dict = {
             Columns.NAME: "Name",
             Columns.ADDRESS: "Address",
@@ -81,10 +73,10 @@ class DataGenerator:
             Columns.SSN: "SSN",
         }
 
-        return [header_dict[col] for col in self.columns]
+        return tuple(header_dict[col] for col in self.columns)
 
-    def _get_data_generators(self) -> List[Generator[Any, None, None]]:
-        """Returns a list of the custom data generators for the columns"""
+    def _get_data_generators(self) -> Tuple[Generator[Any, None, None]]:
+        """Returns a tuple of the custom data generators for the columns"""
         generator_dict = {
             Columns.NAME: self._name_generator(),
             Columns.ADDRESS: self._address_generator(),
@@ -95,7 +87,7 @@ class DataGenerator:
             Columns.SSN: self._ssn_generator(),
         }
 
-        return [generator_dict[col] for col in self.columns]
+        return tuple(generator_dict[col] for col in self.columns)
 
     def _name_generator(self) -> str:
         """Infinite iterator to produce full names"""
@@ -163,7 +155,7 @@ class DataGenerator:
         return starmap(Row, islice(zip(*self.data_generators), num_rows))
 
     def gen_table(self, num_rows: int = None) -> namedtuple:
-        """Returns named a namedtuple of header & a list of data"""
+        """Returns named a namedtuple of header & a tuple of data"""
         Table = namedtuple("Table", self.headers)
         # fmt: off
         return Table(*(tuple(islice(data_generator, num_rows)) for data_generator in self.data_generators))
