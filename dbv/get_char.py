@@ -11,13 +11,12 @@ try:
 
 
 except ImportError:
+    import sys
+    import termios
+    import tty
 
     def _getch() -> str:
         """Get character on Unix systems"""
-        import sys
-        import termios
-        import tty
-
         # Puts the terminal into cbreak mode, meaning keys aren't echoed to the screen
         # and can be read immediately without input buffering.
         fd = sys.stdin.fileno()
