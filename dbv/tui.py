@@ -251,7 +251,6 @@ class Interface:
     table_commands = {}
 
     def __init__(self, df: dd.DataFrame, title: str):
-        self.loading = "Loading...\n\nNot implemented yet"
         self.help = Help(
             {
                 "Mode Commands": self.commands,
@@ -259,7 +258,7 @@ class Interface:
             }
         )
         self.views = {
-            Mode.LOADING: self.loading,
+            Mode.LOADING: "",
             Mode.HELP: self.help,
         }
         self.set_df(df)
@@ -313,6 +312,7 @@ class Interface:
 
     def __rich__(self) -> ConsoleRenderable:
         """Render the interface layout."""
+        # FIXME: The mode line isn't working with this
         self.layout["mode_line"].update(mode_line(self.mode).children)
         output = self.views[self.mode]
         padded_output = Styled(Padding(output, (1, 2)), body_style)
@@ -345,14 +345,18 @@ class Interface:
     def load_command(self, refresh: Callable) -> bool:
         """Load a database"""
         self.mode = Mode.LOADING
+        loading = Table("Thinking...")
+        loading.add_row("Not implemented yet... Wait, is this a box?")
+        self.views[Mode.LOADING] = loading
         refresh()
         # FIXME: This is so the user sees the loading message! It should be deleted for "production" use
-        sleep(1)
+        sleep(2)
         # FIXME prompt for user input
         user_path = "Datasets/usrdata2.parquet"
         try:
             df = load_df(user_path)
         except OSError as exc:
+            # FIXME: if the space is too small this doesn't appear in the table
             df = pd.DataFrame([{"[red]ERROR[/]": exc.args}])
         self.set_df(df)
         return True
