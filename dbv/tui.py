@@ -310,6 +310,13 @@ class Interface:
         self.layout["main"]["output"].update(padded_output)
         return self.layout
 
+    @add_command(commands, "?", "help")
+    def show_help(self, refresh: Callable) -> bool:
+        """Show this help page"""
+        self.mode = Mode.HELP
+        refresh()
+        return True
+
     # switch modes (TODO: input modes)
     @add_command(commands, "s", "(s)ummary")
     def summary_mode(self, refresh: Callable) -> bool:
@@ -338,6 +345,12 @@ class Interface:
         self.layout["left"].visible = not self.layout["left"].visible
         refresh()
         return True
+
+    # quit (TODO: if input is lagged, doesn't work)
+    @add_command(commands, "q", "(q)uit")
+    def quit(self, refresh: Callable) -> bool:
+        """Quit"""
+        return False
 
     # FIXME: If the mode is not TABLE the table still scrolls
     # TABLE MODE: table navigation (TODO: arrow keys)
@@ -382,18 +395,5 @@ class Interface:
     def go_to_bottom(self, refresh: Callable) -> bool:
         """Go to the bottom of the table"""
         self.table.startat = len(self.df) - self.table._last_page_size
-        refresh()
-        return True
-
-    # quit (TODO: if input is lagged, doesn't work)
-    @add_command(commands, "q", "(q)uit")
-    def quit(self, refresh: Callable) -> bool:
-        """Quit"""
-        return False
-
-    @add_command(commands, "?", "help")
-    def show_help(self, refresh: Callable) -> bool:
-        """Show this help page"""
-        self.mode = Mode.HELP
         refresh()
         return True
