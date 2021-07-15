@@ -1,5 +1,6 @@
 import enum
 import itertools
+from dataclasses import dataclass
 from typing import Any, Callable, Dict
 
 import numpy as np
@@ -204,14 +205,14 @@ class TableView:
         yield f"... {len(filtered)} total rows"
 
 
+@dataclass
 class Command:
-    """Interface command class"""
+    """Interface command dataclass"""
 
-    def __init__(self, key: str, short_description: str, fn: Callable, fn_doc: str):
-        self.key = key
-        self.short_description = short_description
-        self.fn = fn
-        self.help = fn_doc
+    key: str
+    short_description: str
+    fn: Callable
+    help: str
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         """Call command"""
