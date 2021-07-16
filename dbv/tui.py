@@ -123,7 +123,7 @@ def compile_filter(filter_string: str) -> Callable[[dd.DataFrame], any]:
 
         # Add columns into locals so that they may be referred to directly
         locals().update({col: getattr(df, col) for col in df.columns})
-        evaluated = eval(filter_string, None, locals())
+        evaluated = eval(filter_string, None, locals())  # noqa: S307
 
         # Index the df by the evaluated filter
         return df[evaluated]
@@ -190,7 +190,7 @@ class TableView:
 
         # compile and execute the filter
         # the filter against all columns
-        def filter(df):
+        def filter(df: dd.DataFrame) -> dd.DataFrame:
             try:
                 filter = compile_filter(self.filter)
                 filtered = filter(df)
@@ -393,7 +393,7 @@ class Interface:
         are in the namespace; for instance, `name.isna() & salary >= salary.max() - 1e4` is a valid filter.
         """
 
-        def _update_filter(s):
+        def _update_filter(s: str) -> bool:
             """Newline means done editing filter; otherwise update."""
             if s.endswith("\n"):
                 if not s.strip():
