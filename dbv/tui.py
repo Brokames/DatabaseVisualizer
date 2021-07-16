@@ -82,7 +82,9 @@ class Help:
         self.tables = []
         for title, commands in command_dict.items():
             table = Table(
-                title=title, expand=True, row_styles=[body_style, body_style_secondary],
+                title=title,
+                expand=True,
+                row_styles=[body_style, body_style_secondary],
             )
             table.add_column("Command")
             table.add_column("Short")
