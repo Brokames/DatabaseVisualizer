@@ -50,8 +50,8 @@ def mode_line(current_mode: Mode) -> Layout:
     """Render the UI mode line."""
     line = Layout(name="mode_line", size=1)
 
-    inactive_style = "green on blue"
-    active_style = "bold blue on white"
+    inactive_style = "black on white"
+    active_style = "black on yellow"
 
     line.split_row(
         *(
@@ -292,15 +292,8 @@ class Interface:
             output = self.table if self.mode == Mode.TABLE else self.summary
         padded_output = Styled(Padding(output, (1, 2)), body_style)
 
-        layout["main"].split_row(
-            Layout(body, name="left", ratio=2),
-            Layout(padded_output, name="output", ratio=3),
-        )
-        layout["left"].split_column(
-            Layout(body, name="options", ratio=2),
-            Layout(body, name="console", ratio=3),
-            Layout(body, name="input"),
-        )
+        layout["main"].update(padded_output)
+
         return layout
 
     # switch modes (TODO: input modes)
