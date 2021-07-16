@@ -1,6 +1,4 @@
 import asyncio
-import sys
-import tty
 from typing import Awaitable, Callable
 
 import click
@@ -8,6 +6,7 @@ import rich.traceback
 from rich.live import Live
 
 from dbv.df import load_df
+from dbv.get_char import get_char
 from dbv.tui import Interface
 
 rich.traceback.install()
@@ -26,7 +25,7 @@ async def consume_keyboard_events(
 
     When `keyboard_handler` returns falsey, exit.
     """
-    while ch := sys.stdin.read(1):
+    while ch := get_char():
         should_continue = await keyboard_handler(ch, live.refresh)
         if not should_continue:
             break
@@ -39,26 +38,15 @@ def main(filename: str) -> None:
 
     TODO add more info to this help message
     """
-    # stores terminal attributes to restore after closing the application
-    stdin = sys.stdin.fileno()
-    tattr = tty.tcgetattr(stdin)
+    df = load_df(filename)
 
-    try:
-        # Puts the terminal into cbreak mode, meaning keys aren't echoed to the screen
-        # and can be read immediately without input buffering.
-        tty.setcbreak(sys.stdin.fileno())
+    interface = Interface(df, filename)
 
-        df = load_df(filename)
-        interface = Interface(df, filename)
-
-        with Live(interface, screen=True) as live:
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(
-                consume_keyboard_events(interface.keyboard_handler, live)
-            )
-
-    finally:  # restores the terminal to default behavior
-        tty.tcsetattr(stdin, tty.TCSANOW, tattr)
+    with Live(interface, screen=True) as live:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(
+            consume_keyboard_events(interface.keyboard_handler, live)
+        )
 
 
 if __name__ == "__main__":
