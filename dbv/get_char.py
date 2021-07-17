@@ -16,6 +16,8 @@ try:
     def _getch() -> str:
         """Microsoft getch()."""
         return msvcrt.getch().decode()
+
+
 except ImportError:
     import sys
     import termios
