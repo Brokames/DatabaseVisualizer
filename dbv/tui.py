@@ -1,5 +1,7 @@
 import enum
+import functools
 import itertools
+import operator
 from dataclasses import dataclass
 from typing import Any, Callable, Dict
 
@@ -29,6 +31,12 @@ header = Text("Database Viewer", justify="center", style=header_style)
 body_style = Style(color=fg_color, bgcolor=bg_color)
 body_style_secondary = Style(color=fg_color, bgcolor=bg_color_secondary)
 body = Panel("Hello Pangolins!", style=body_style)
+
+
+ESCAPE_KEY = "\x1b"
+CTRL_H = "\x08"
+BACKSPACE = "\x7f"
+CTRL_K = "\x0b"
 
 
 class Mode(enum.Enum):
@@ -104,6 +112,27 @@ class Summary:
         return Schema.from_df(self.df)
 
 
+def compile_filter(filter_string: str) -> Callable[[dd.DataFrame], any]:
+    """Compile a filter string into a dataframe filter."""
+
+    def _compiled_filter(df: dd.DataFrame) -> any:
+        """Compiled filter function."""
+        # If it's a column, just return the series.
+        # Adding whitespace to a column name compiles as a filter that fails later,
+        # so strip whitespace to degrade to at least just showing that column
+        if filter_string.strip() in df.columns:
+            return getattr(df, filter_string.strip())
+
+        # Add columns into locals so that they may be referred to directly
+        locals().update({col: getattr(df, col) for col in df.columns})
+        evaluated = eval(filter_string, None, locals())  # noqa: S307
+
+        # Index the df by the evaluated filter
+        return df[evaluated]
+
+    return _compiled_filter
+
+
 class TableView:
     """Show the database as a table"""
 
@@ -148,17 +177,49 @@ class TableView:
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
         """Render table dynamically based on provided space and filtering."""
+        # this function is rapidly becoming in need of breaking down :P
         # -6 for title, header, spacers, -1 for footer
         height = options.height - 7  # could also use max_height?
         width = options.max_width - 2  # could also use min_width?
 
+        if self.filter is not None:
+            # save space for and render the filter editing pane
+            height -= 1
+            yield f"filter: {self.filter}"
+
         # saved for page increment
         self._last_page_size = height
+
+        # compile and execute the filter
+        # the filter against all columns
+        def filter(df: dd.DataFrame) -> dd.DataFrame:
+            try:
+                filter = compile_filter(self.filter)
+                filtered = filter(df)
+                if not isinstance(filtered, dd.DataFrame):
+                    # It's a series, to turn it into a DataFrame
+                    return filtered.to_frame()
+                return filtered
+            except Exception:
+                # if the filter doesn't compile or otherwise fails, then just directly apply
+                if self.filter:
+                    return df[
+                        functools.reduce(
+                            operator.__or__,
+                            [
+                                getattr(df, col)
+                                .map(str)
+                                .str.contains(self.filter, regex=False)
+                                for col in df.columns
+                            ],
+                        )
+                    ]
+                return df
 
         filtered = (
             self.df
             # apply filter
-            .pipe(lambda df: df if not self.filter else df[self.filter])
+            .pipe(filter)
             # start at self.column_startat
             .pipe(lambda df: df.iloc[:, self.column_startat :])  # noqa: E203
         )
@@ -214,6 +275,24 @@ class TableView:
 
 
 @dataclass
+class CaptureKeyboardInput:
+    """Editing callback class used to capture keyboard input to the interface."""
+
+    value: str
+    update: Callable[[str], bool]
+
+    def send_character(self, ch: str) -> bool:
+        """Evaluate the next character, update the "editor", and send value to update callback."""
+        if ch in (BACKSPACE, CTRL_H):
+            self.value = self.value[:-1]
+        elif ch == CTRL_K:
+            self.value = ""
+        else:
+            self.value += ch
+        return self.update(self.value)
+
+
+@dataclass
 class Command:
     """Interface command dataclass"""
 
@@ -263,6 +342,7 @@ class Interface:
         self.help = Help(
             {"Mode Commands": self.commands, "Table Commands": self.table_commands}
         )
+        self.editing = None
 
     async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
         """This function is executed serially per input typed by the keyboard.
@@ -270,6 +350,17 @@ class Interface:
         It does not need to be thread safe; the keyboard event generator will not
         call it in parallel. `ch` will always have length 1.
         """
+        # If something is capturing input, defer to it.
+        if self.editing is not None:
+            if ch == ESCAPE_KEY:
+                self.editing = None
+                return True
+            continue_editing = self.editing.send_character(ch)
+            refresh()
+            if not continue_editing:
+                self.editing = None
+            return True
+
         # If the command is registered, call it
         if self.mode == Mode.TABLE:
             if ch in self.table_commands:
@@ -301,6 +392,31 @@ class Interface:
 
         return layout
 
+    @add_command(table_commands, "/", "filter")
+    def edit_filter(self, refresh: Callable) -> bool:
+        """Edit the table filter.
+
+        Supports arbitrary text, which will do a full row search for that text (converts
+        cells to strings, so eg. you can search for substrings of typed data).
+
+        Also supports pandas-style expressions. `df` as well as each individual column
+        are in the namespace; for instance, `name.isna() & salary >= salary.max() - 1e4` is a valid filter.
+        """
+
+        def _update_filter(s: str) -> bool:
+            """Newline means done editing filter; otherwise update."""
+            if s.endswith("\n"):
+                if not s.strip():
+                    self.table.filter = None  # stop showing the filter line
+                return False
+            self.table.filter = s
+            return True
+
+        self.editing = CaptureKeyboardInput(self.table.filter or "", _update_filter)
+        self.table.filter = ""
+        refresh()
+        return True
+
     # switch modes (TODO: input modes)
     @add_command(commands, "s", "(s)ummary")
     def summary_mode(self, refresh: Callable) -> bool:
@@ -316,10 +432,7 @@ class Interface:
         refresh()
         return True
 
-    # FIXME: If the mode is not TABLE the table still scrolls
     # TABLE MODE: table navigation (TODO: arrow keys)
-    # need to figure out a better refresh option here; not refreshing feels weird
-    # but refreshing on each j or k is slaggy
     @add_command(table_commands, "h", "scroll left")
     def scroll_left(self, refresh: Callable) -> bool:
         """Scroll left one column in the table view"""
