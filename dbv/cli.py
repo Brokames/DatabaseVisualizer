@@ -6,7 +6,7 @@ import rich.traceback
 from rich.live import Live
 
 from dbv.df import load_df
-from dbv.get_char import get_char
+from dbv.get_char import cbreak, get_char
 from dbv.tui import Interface
 
 rich.traceback.install()
@@ -42,11 +42,12 @@ def main(filename: str) -> None:
 
     interface = Interface(df, filename)
 
-    with Live(interface, screen=True) as live:
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(
-            consume_keyboard_events(interface.keyboard_handler, live)
-        )
+    with cbreak():
+        with Live(interface, screen=True) as live:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(
+                consume_keyboard_events(interface.keyboard_handler, live)
+            )
 
 
 if __name__ == "__main__":
