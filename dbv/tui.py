@@ -74,9 +74,7 @@ class Help:
         self.tables = []
         for title, commands in command_dict.items():
             table = Table(
-                title=title,
-                expand=True,
-                row_styles=[body_style, body_style_secondary],
+                title=title, expand=True, row_styles=[body_style, body_style_secondary],
             )
             table.add_column("Command")
             table.add_column("Short")
@@ -167,7 +165,9 @@ class TableView:
         )
 
         def format(v: any) -> ConsoleRenderable:
-            return Text(v, no_wrap=True) if isinstance(v, str) else Pretty(v, no_wrap=True)
+            return (
+                Text(v, no_wrap=True) if isinstance(v, str) else Pretty(v, no_wrap=True)
+            )
 
         table = Table(expand=True, row_styles=[body_style, body_style_secondary])
 
@@ -193,11 +193,9 @@ class TableView:
         if cant_render.size:  # np.ndarray
             # always render at least 1 column
             max_column = max(cant_render[0], 1)
+            # heuristic: we've got some room, render one column with overflow
             if max_column < len(columns):
-                next_column_width = column_widths[max_column]
                 available_width = width - total_width[max_column - 1]
-
-                # heuristic: we've got some room, render one column with overflow
                 if available_width >= 30 and (available_width / max_column) >= 4:
                     max_column += 1
             column_names = column_names[:max_column]
@@ -261,10 +259,7 @@ class Interface:
         self.table = TableView(self.df)
         self.mode = Mode.TABLE
         self.help = Help(
-            {
-                "Mode Commands": self.commands,
-                "Table Commands": self.table_commands,
-            }
+            {"Mode Commands": self.commands, "Table Commands": self.table_commands}
         )
 
     async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
