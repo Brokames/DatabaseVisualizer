@@ -3,7 +3,7 @@ import functools
 import itertools
 import operator
 from dataclasses import dataclass
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Optional
 
 import numpy as np
 from dask import dataframe as dd
@@ -143,7 +143,9 @@ class TableView:
         self._last_page_size = 0
         self._startat = 0
         self._column_startat = 0
-        self.filter = None
+        self._filter = CaptureKeyboardInput(
+            prompt="filter: ", update=CaptureKeyboardInput.exit_on_return
+        )
 
     @property
     def startat(self) -> int:
@@ -173,6 +175,13 @@ class TableView:
         """Decrement startat by the last known page size."""
         self.startat -= self._last_page_size
 
+    @property
+    def filter(self) -> str:
+        """Get the filter value, if we should be using it."""
+        if self._filter and self._filter.value:
+            return self._filter.value
+        return None
+
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
@@ -182,10 +191,10 @@ class TableView:
         height = options.height - 7  # could also use max_height?
         width = options.max_width - 2  # could also use min_width?
 
-        if self.filter is not None:
+        if self._filter and (self._filter.value or self._filter.editing):
             # save space for and render the filter editing pane
             height -= 1
-            yield f"filter: {self.filter}"
+            yield self._filter
 
         # saved for page increment
         self._last_page_size = height
@@ -278,8 +287,11 @@ class TableView:
 class CaptureKeyboardInput:
     """Editing callback class used to capture keyboard input to the interface."""
 
-    value: str
-    update: Callable[[str], bool]
+    prompt: Optional[str] = None
+    value: str = ""
+    editing: bool = False
+    update: Callable[["CaptureKeyboardInput", str], bool] = lambda cap, s: True
+    finalize: Callable[["CaptureKeyboardInput"], None] = lambda cap: None
 
     def send_character(self, ch: str) -> bool:
         """Evaluate the next character, update the "editor", and send value to update callback."""
@@ -289,7 +301,22 @@ class CaptureKeyboardInput:
             self.value = ""
         else:
             self.value += ch
-        return self.update(self.value)
+        return self.update(self, self.value)
+
+    @staticmethod
+    def exit_on_return(cap: "CaptureKeyboardInput", s: str) -> bool:
+        """Exit editing on return character."""
+        if s.endswith("\n"):
+            cap.value = cap.value.rstrip("\r\n")
+            return False
+        return True
+
+    def __rich_console__(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
+        cursor = "[white]█[/white]" if self.editing else ""
+        prompt = self.prompt or ""
+        yield f"{prompt}{self.value}{cursor}"
 
 
 @dataclass
@@ -352,13 +379,11 @@ class Interface:
         """
         # If something is capturing input, defer to it.
         if self.editing is not None:
-            if ch == ESCAPE_KEY:
+            if ch == ESCAPE_KEY or not self.editing.send_character(ch):
+                self.editing.finalize(self.editing)
+                self.editing.editing = False
                 self.editing = None
-                return True
-            continue_editing = self.editing.send_character(ch)
             refresh()
-            if not continue_editing:
-                self.editing = None
             return True
 
         # If the command is registered, call it
@@ -405,15 +430,10 @@ class Interface:
 
         def _update_filter(s: str) -> bool:
             """Newline means done editing filter; otherwise update."""
-            if s.endswith("\n"):
-                if not s.strip():
-                    self.table.filter = None  # stop showing the filter line
-                return False
-            self.table.filter = s
-            return True
+            return not s.endswith("\n")
 
-        self.editing = CaptureKeyboardInput(self.table.filter or "", _update_filter)
-        self.table.filter = ""
+        self.editing = self.table._filter
+        self.editing.editing = True
         refresh()
         return True
 
