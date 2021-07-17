@@ -167,7 +167,9 @@ class TableView:
         )
 
         def format(v: any) -> ConsoleRenderable:
-            return Text(v) if isinstance(v, str) else Pretty(v)
+            return (
+                Text(v, no_wrap=True) if isinstance(v, str) else Pretty(v, no_wrap=True)
+            )
 
         table = Table(expand=True, row_styles=[body_style, body_style_secondary])
 
@@ -189,9 +191,15 @@ class TableView:
         # np.where returns tuple of list of elements for each dimension
         cant_render = np.where(total_width > width)[0]
 
-        # cant_render[0], if it exists, is the first column indexd we don't have space for
+        # cant_render[0], if it exists, is the first column index we don't have space for
         if cant_render.size:  # np.ndarray
-            max_column = max(cant_render[0], self.column_startat + 1)
+            # always render at least 1 column
+            max_column = max(cant_render[0], 1)
+            # heuristic: we've got some room, render one column with overflow
+            if max_column < len(columns):
+                available_width = width - total_width[max_column - 1]
+                if available_width >= 30 and (available_width / max_column) >= 4:
+                    max_column += 1
             column_names = column_names[:max_column]
             paged = [row[:max_column] for row in paged]
 
@@ -253,10 +261,7 @@ class Interface:
         self.table = TableView(self.df)
         self.mode = Mode.TABLE
         self.help = Help(
-            {
-                "Mode Commands": self.commands,
-                "Table Commands": self.table_commands,
-            }
+            {"Mode Commands": self.commands, "Table Commands": self.table_commands}
         )
 
     async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
