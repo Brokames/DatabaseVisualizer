@@ -18,7 +18,8 @@ KeyboardHandler = Callable[[str, RefreshCallback], Awaitable[bool]]
 async def consume_keyboard_events(
     keyboard_handler: KeyboardHandler, live: Live
 ) -> None:
-    """Read from stdin and execute the keyboard handler.
+    """
+    Read from stdin and execute the keyboard handler.
 
     The buffer is consumed serially with no regard to timing, so if `keyboard_handler`
     is slow it may delay the execution of events and feel unnaturaly.
@@ -34,7 +35,8 @@ async def consume_keyboard_events(
 @click.command()
 @click.argument("filename")
 def main(filename: str) -> None:
-    """Startup Database Viewer
+    """
+    Starts the Database Viewer.
 
     TODO add more info to this help message
     """

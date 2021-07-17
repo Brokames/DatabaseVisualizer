@@ -45,7 +45,7 @@ except ImportError:
 
 
 def get_char() -> str:
-    """Get a single character from standard input without echo to screen"""
+    """Get a single character from standard input without echo to screen."""
     ch = _getch()
 
     if ch == SIGINT or ch == SIGTSTP:
