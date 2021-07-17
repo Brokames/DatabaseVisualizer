@@ -76,7 +76,7 @@ def mode_line(current_mode: Mode) -> Layout:
 
 
 class Help:
-    """Rich-renderable command help page"""
+    """Rich-renderable command help page."""
 
     def __init__(self, command_dict: dict):
         self.tables = []
@@ -134,7 +134,7 @@ def compile_filter(filter_string: str) -> Callable[[dd.DataFrame], any]:
 
 
 class TableView:
-    """Show the database as a table"""
+    """Show the database as a table."""
 
     # Rich-renderable summary pane for a DataFrame.
 
@@ -249,14 +249,14 @@ class TableView:
         # +1 for column separator
         max_column_widths = np.array([width.maximum for width in column_widths]) + 1
         total_width = np.add.accumulate(max_column_widths)
-        # np.where returns tuple of list of elements for each dimension
+        # np.where returns tuple of list of elements for each dimension.
         cant_render = np.where(total_width > width)[0]
 
-        # cant_render[0], if it exists, is the first column index we don't have space for
+        # cant_render[0], if it exists, is the first column index we don't have space for.
         if cant_render.size:  # np.ndarray
-            # always render at least 1 column
+            # always render at least 1 column.
             max_column = max(cant_render[0], 1)
-            # heuristic: we've got some room, render one column with overflow
+            # heuristic: we've got some room, render one column with overflow.
             if max_column < len(columns):
                 available_width = width - total_width[max_column - 1]
                 if available_width >= 30 and (available_width / max_column) >= 4:
@@ -294,7 +294,7 @@ class CaptureKeyboardInput:
 
 @dataclass
 class Command:
-    """Interface command dataclass"""
+    """Interface command dataclass."""
 
     key: str
     short_description: str
@@ -319,7 +319,8 @@ def add_command(command_dict: Dict, key: str, short_description: str) -> Callabl
 
 
 class Interface:
-    """Class maintaining state for the interface.
+    """
+    Class maintaining state for the interface.
 
     This class coordinates the keyboard handler with anything else stateful that it
     should interact with. It has a __rich__ method which controls how the entire
@@ -345,7 +346,8 @@ class Interface:
         self.editing = None
 
     async def keyboard_handler(self, ch: str, refresh: Callable[[], None]) -> bool:
-        """This function is executed serially per input typed by the keyboard.
+        """
+        This function is executed serially per input typed by the keyboard.
 
         It does not need to be thread safe; the keyboard event generator will not
         call it in parallel. `ch` will always have length 1.
@@ -369,8 +371,7 @@ class Interface:
         if ch in self.commands:
             return self.commands[ch].fn(self, refresh)
 
-        # If a command hasn't been found by this point it means there isn't one
-        # defined.
+        # If a command hasn't been found by this point, there isn't one defined.
 
         return True
 
@@ -394,7 +395,8 @@ class Interface:
 
     @add_command(table_commands, "/", "filter")
     def edit_filter(self, refresh: Callable) -> bool:
-        """Edit the table filter.
+        """
+        Edit the table filter.
 
         Supports arbitrary text, which will do a full row search for that text (converts
         cells to strings, so eg. you can search for substrings of typed data).

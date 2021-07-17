@@ -6,7 +6,7 @@ try:
     import msvcrt
 
     def _getch() -> str:
-        """Get character on Windows systems"""
+        """Get character on Windows systems."""
         return msvcrt.getch().decode()
 
 
@@ -16,9 +16,12 @@ except ImportError:
     import tty
 
     def _getch() -> str:
-        """Get character on Unix systems"""
-        # Puts the terminal into cbreak mode, meaning keys aren't echoed to the screen
-        # and can be read immediately without input buffering.
+        """
+        Get character on Unix systems.
+
+        Puts the terminal into cbreak mode, meaning keys aren't echoed to the screen
+        and can be read immediately without input buffering.
+        """
         fd = sys.stdin.fileno()
         tattr = tty.tcgetattr(fd)
 
@@ -32,7 +35,7 @@ except ImportError:
 
 
 def get_char() -> str:
-    """Get a single character from standard input without echo to screen"""
+    """Get a single character from standard input without echo to screen."""
     ch = _getch()
 
     if ch == SIGINT or ch == SIGTSTP:

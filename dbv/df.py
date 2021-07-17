@@ -27,7 +27,8 @@ def df_to_rich_table(df: dd.DataFrame, title: Optional[str] = None) -> Table:
 
 @dataclass
 class Schema:
-    """Class for storing and rendering a table schema.
+    """
+    Class for storing and rendering a table schema.
 
     For now column type is simply a dtype. Since parquet supports nested schemas with
     thrift types, this could be expanded to instead render with rich.tree.Tree and
